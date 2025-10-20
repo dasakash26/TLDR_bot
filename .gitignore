@@ -5,3 +5,4 @@ test.pdf
 chroma_db/
 res.txt
 __pycache__/
+.DS_Store
