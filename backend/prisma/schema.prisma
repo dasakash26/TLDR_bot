@@ -5,7 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-py"
+  provider             = "prisma-client-py"
   recursive_type_depth = -1
 }
 
@@ -23,4 +23,23 @@ model User {
   otp         String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  File        File[]
+}
+
+enum STATUS {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model File {
+  id        String   @id @default(cuid())
+  filename  String
+  status    STATUS   @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user_id String
+  user    User   @relation(fields: [user_id], references: [id])
 }

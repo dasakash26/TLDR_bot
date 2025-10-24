@@ -6,30 +6,21 @@ from core.config import settings
 from .models import LoginReq, SignupReq, VerificationReq
 from tools.otp_gen import gen_otp
 from services.db_service import db
-import bcrypt
 import logging
 from jose import jwt
 from slowapi import Limiter
-import hashlib
+from tools.auth import get_current_user, hash_secret, verify_secret
 
 SECRET_KEY = settings.secret_key
 JWT_ALGO = settings.jwt_algo
 OTP_EXPIRY_TIME = 24
 
-
 router = APIRouter()
 limiter = Limiter(key_func=lambda request: request.client.host)
-
-
-def hash_secret(secret: str) -> str:
-    pre_hashed = hashlib.sha256(secret.encode()).hexdigest()
-    salt = bcrypt.gensalt()
-    return bcrypt.hashpw(pre_hashed.encode(), salt).decode()
-
-
-def verify_secret(secret: str, hashed: str) -> bool:
-    pre_hashed = hashlib.sha256(secret.encode()).hexdigest()
-    return bcrypt.checkpw(pre_hashed.encode(), hashed.encode())
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
 
 
 @router.post("/signup")
@@ -98,7 +89,7 @@ async def verify(request: Request, data: VerificationReq):
         )
 
     time_passed = datetime.now(timezone.utc) - user.updatedAt
-    
+
     if time_passed.total_seconds() / 3600 > OTP_EXPIRY_TIME:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="OTP expired"
@@ -148,32 +139,6 @@ async def login(request: Request, data: LoginReq, res: Response):
     return {"message": "Login successful."}
 
 
-# Helper function to get current user from token
-async def get_current_user(request: Request):
-    # get from cookie
-    token = request.cookies.get("access_token")
-    if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
-        )
-
-    try:
-        payload = jwt.decode(token.split(" ")[1], SECRET_KEY, algorithms=[JWT_ALGO])
-        user_id = payload.get("sub")
-    except Exception as e:
-        logging.error(f"Token decode error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-        )
-
-    user = await db.user.find_unique(where={"id": user_id})
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
-        )
-    return user
-
-
 @router.get("/me")
 @limiter.limit("20/minute")
 async def me(request: Request, current_user=Depends(get_current_user)):
@@ -186,4 +151,14 @@ async def me(request: Request, current_user=Depends(get_current_user)):
         "createdAt": current_user.createdAt,
         "updatedAt": current_user.updatedAt,
     }
+    logging.info(f"User data retrieved for user ID {current_user.id}")
     return user_data
+
+
+@router.post("/logout")
+@limiter.limit("10/minute")
+async def logout(
+    request: Request, res: Response, current_user=Depends(get_current_user)
+):
+    res.delete_cookie(key="access_token")
+    return {"message": "Logout successful."}

@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from routes.user_routes import router as user_router
+from routes.file_routes import router as doc_router
 from contextlib import asynccontextmanager
 from services.db_service import db
 
@@ -14,6 +15,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(user_router, prefix="/user", tags=["user"])
+app.include_router(doc_router, prefix="/file", tags=["file"])
 
 
 @app.get("/")
