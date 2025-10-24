@@ -51,10 +51,36 @@ async def upload(
         )
 
     # TODO: Trigger background processing task to process the file
+    return {
+        "file_id": file_record.id,
+        "filename": file_record.filename,
+        "status": file_record.status,
+        "uploaded_at": file_record.createdAt,
+    }
+
+
+# file status route
+@router.get("/status/{file_id}")
+async def file_status(file_id: int, user=Depends(get_current_user)):
+    if not file_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File ID is required",
+        )
+
+    # Retrieve the file record from the database
+    file_record = await db.file.find_unique(where={"id": file_id, "user_id": user.id})
+
+    if not file_record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found",
+        )
 
     return {
         "file_id": file_record.id,
         "filename": file_record.filename,
         "status": file_record.status,
         "uploaded_at": file_record.createdAt,
+        "processed_at": file_record.updatedAt,
     }
