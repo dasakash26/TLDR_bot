@@ -5,8 +5,8 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../generated/prisma"
+  provider = "prisma-client-py"
+  recursive_type_depth = -1
 }
 
 datasource db {
@@ -15,10 +15,12 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String?
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  name        String?
+  email       String   @unique
+  password    String
+  is_verified Boolean  @default(false)
+  otp         String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

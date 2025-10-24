@@ -6,6 +6,7 @@ class Settings(BaseSettings):
 
     database_url: str
     secret_key: str
+    jwt_algo: str
 
 
 settings = Settings()  # type: ignore
