@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider             = "prisma-client-py"
   recursive_type_depth = -1
@@ -23,10 +17,11 @@ model User {
   otp         String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  File        File[]
+  folders     Folder[]
+  files       File[]
 }
 
-enum STATUS {
+enum FileStatus {
   PENDING
   PROCESSING
   COMPLETED
@@ -34,12 +29,62 @@ enum STATUS {
 }
 
 model File {
+  id          String      @id @default(cuid())
+  filename    String
+  status      FileStatus  @default(PENDING)
+  file_url    String?
+  file_chunks FileChunk[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  uploader_id String
+  uploader    User   @relation(fields: [uploader_id], references: [id], onDelete: Cascade)
+
+  folder_id String
+  folder    Folder @relation(fields: [folder_id], references: [id])
+}
+
+model FileChunk {
+  id         String   @id @default(cuid())
+  vectorId   String
+  chunkIndex Int
+  file_id    String
+  file       File     @relation(fields: [file_id], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Folder {
   id        String   @id @default(cuid())
-  filename  String
-  status    STATUS   @default(PENDING)
+  name      String
+  createdBy String
+  users     User[]
+  files     File[]
+  thread    Thread[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
 
-  user_id String
-  user    User   @relation(fields: [user_id], references: [id])
+model Thread {
+  id        String    @id @default(cuid())
+  message   Message[]
+  folder_id String
+  folder    Folder    @relation(fields: [folder_id], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+enum ROLE {
+  USER
+  AI
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  role      ROLE
+  chat_id   String
+  chat      Thread   @relation(fields: [chat_id], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
