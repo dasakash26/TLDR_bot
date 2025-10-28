@@ -57,7 +57,7 @@ model File {
 
 model FileChunk {
   id         String   @id @default(cuid())
-  vectorId   String
+  vector_id  String
   chunkIndex Int
   file_id    String
   file       File     @relation(fields: [file_id], references: [id], onDelete: Cascade)

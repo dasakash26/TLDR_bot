@@ -105,6 +105,42 @@ async def add_user(
         )
 
 
+# delete folder
+@router.delete("/{folder_id}")
+@limiter.limit(rate_limits["get_folders"])
+async def delete_folder(
+    request: Request,
+    folder_id: Annotated[str, Path(title="Folder ID")],
+    user=Depends(get_current_user),
+):
+    user_id = user.id
+    try:
+        folder = await db.folder.find_unique(where={"id": folder_id})
+        if not folder:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found"
+            )
+
+        if folder.created_by != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only the folder creator can delete the folder",
+            )
+
+        await db.folder.delete(where={"id": folder_id})
+
+        return {"message": f"Folder {folder_id} deleted successfully"}
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logging.error(f"Error deleting folder {folder_id} by user {user_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
+
+
 # Get files
 @router.get("/{folder_id}/files")
 @limiter.limit(rate_limits["get_folders"])

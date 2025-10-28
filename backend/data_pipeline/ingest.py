@@ -42,6 +42,16 @@ async def process_doc(file_path_str: str, document_id: str, folder_id: str):
             ],
         )
 
+        await db.filechunk.create_many(
+            data=[
+                {
+                    "file_id": document_id,
+                    "vector_id": res[i],
+                    "chunkIndex": i,
+                }
+                for i, chunk in enumerate(all_splits)
+            ]
+        )
         # Update document status to 'PROCESSED'
         await db.file.update(
             where={"id": document_id}, data={"status": FileStatus.COMPLETED}
