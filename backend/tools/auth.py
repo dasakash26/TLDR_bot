@@ -38,6 +38,7 @@ async def get_current_user(request: Request):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
         )
+    logging.info(f"Authenticated user: {user.email}")
     return user
 
 

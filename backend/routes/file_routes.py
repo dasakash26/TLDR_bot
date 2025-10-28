@@ -1,9 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+    UploadFile,
+    File,
+    Request,
+    BackgroundTasks,
+)
 from slowapi import Limiter
-from fastapi import Request, UploadFile, File
 from datetime import datetime, timezone
 from tools.auth import get_current_user
 from services.db_service import db
+import logging
+import re
+from pathlib import Path
+
 
 router = APIRouter()
 limiter = Limiter(key_func=lambda request: request.client.host)
@@ -16,52 +28,80 @@ rate_limits = {
 @router.post("/upload")
 @limiter.limit(rate_limits["upload_file"])
 async def upload(
-    request: Request, user=Depends(get_current_user), buffer: UploadFile = File(...)
+    request: Request,
+    background_tasks: BackgroundTasks,
+    folder_id: str,
+    file: UploadFile = File(...),
+    user=Depends(get_current_user),
 ):
-    """
-    - Upload a file associated with the authenticated user.
-    - Store the fle, create db record with status PENDING.
-    - Trigger background processing task.
-    - Return file metadata and processing status.
-    """
-    # Save file to storage (e.g., local disk, cloud storage)
-    file_name = buffer.filename
-
-    if not file_name:
-        file_name = f"upload_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
-    file_location = f"files/{user.email}/{buffer.filename}"
-
-    with open(file_location, "wb") as f:
-        content = await buffer.read()
-        f.write(content)
-
-    # Create a database record for the uploaded file
-    file_record = None
+    user_id = user.id
+    original_filename = str(file.filename)
     try:
-        file_record = await db.file.create(
-            data={
-                "user_id": user.id,
-                "filename": file_name,
-            }
+        # check valid folder
+        folder = await db.folder.find_first(
+            where={"id": folder_id, "users": {"some": {"id": user_id}}}
         )
+        if not folder:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Folder not found or access denied",
+            )
     except Exception as e:
+        logging.error(
+            f"Error checking folder {folder_id} for user {user_id}: {e}",
+            exc_info=True,
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create file record",
+            detail="An unexpected error occurred while accessing the folder.",
+        )
+    try:
+        base_dir = Path(__file__).parent.parent
+        temp_dir = base_dir / "data_pipeline" / "temp" / user_id
+        temp_dir.mkdir(parents=True, exist_ok=True)
+
+        safe_base = re.sub(r"[^a-zA-Z0-9._-]", "_", Path(original_filename).stem)
+        extension = Path(original_filename).suffix
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        unique_filename = f"{safe_base}_{timestamp}{extension}"
+        file_location = temp_dir / unique_filename
+
+        logging.debug(f"Attempting to save file to: {file_location}")
+        content = await file.read()
+        with open(file_location, "wb") as buffer:
+            buffer.write(content)
+
+        logging.info(f"Successfully saved file for user {user_id} to {file_location}")
+        res = await db.file.create(
+            data={
+                "folder_id": folder_id,
+                "uploader_id": user_id,
+                "filename": original_filename,
+            }
         )
 
-    # TODO: Trigger background processing task to process the file
+    except Exception as e:
+        logging.error(
+            f"Unexpected error saving file {original_filename} for user {user_id}: {e}",
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred while saving the file.",
+        )
+
+    background_tasks.add_task(process_file, file_path=file_location, document_id=res.id)
     return {
-        "file_id": file_record.id,
-        "filename": file_record.filename,
-        "status": file_record.status,
-        "uploaded_at": file_record.createdAt,
+        "file_id": res.id,
+        "filename": original_filename,
+        "status": "PENDING",
+        "uploaded_at": res.createdAt,
     }
 
 
 # file status route
 @router.get("/status/{file_id}")
-async def file_status(file_id: int, user=Depends(get_current_user)):
+async def file_status(file_id: str, user=Depends(get_current_user)):
     if not file_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -69,7 +109,7 @@ async def file_status(file_id: int, user=Depends(get_current_user)):
         )
 
     # Retrieve the file record from the database
-    file_record = await db.file.find_unique(where={"id": file_id, "user_id": user.id})
+    file_record = await db.file.find_unique(where={"id": file_id})
 
     if not file_record:
         raise HTTPException(

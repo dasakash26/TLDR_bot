@@ -21,6 +21,17 @@ model User {
   files       File[]
 }
 
+model Folder {
+  id         String   @id @default(cuid())
+  name       String
+  created_by String
+  users      User[]
+  files      File[]
+  thread     Thread[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
 enum FileStatus {
   PENDING
   PROCESSING
@@ -54,20 +65,9 @@ model FileChunk {
   updatedAt  DateTime @updatedAt
 }
 
-model Folder {
-  id        String   @id @default(cuid())
-  name      String
-  createdBy String
-  users     User[]
-  files     File[]
-  thread    Thread[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 model Thread {
   id        String    @id @default(cuid())
-  message   Message[]
+  messages  Message[]
   folder_id String
   folder    Folder    @relation(fields: [folder_id], references: [id], onDelete: Cascade)
   createdAt DateTime  @default(now())

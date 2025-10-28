@@ -7,12 +7,17 @@ requires-python = ">=3.12"
 dependencies = [
     "cors>=1.0.1",
     "fastapi[standard]>=0.119.0",
+    "langchain>=0.3.27",
+    "langchain-community>=0.3.31",
+    "langchain-text-splitters>=0.3.11",
+    "langchain-unstructured>=0.1.6",
     "logging>=0.4.9.6",
     "passlib[bcrypt]>=1.7.4",
     "prisma>=0.15.0",
     "pydantic-settings>=2.11.0",
     "python-dotenv>=1.1.1",
     "python-jose>=3.5.0",
+    "python-multipart>=0.0.20",
     "slowapi>=0.1.9",
 ]
 

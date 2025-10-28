@@ -16,6 +16,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.include_router(user_router, prefix="/user", tags=["user"])
 app.include_router(doc_router, prefix="/file", tags=["file"])
+app.include_router(doc_router, prefix="/folder", tags=["folder"])
 
 
 @app.get("/")
