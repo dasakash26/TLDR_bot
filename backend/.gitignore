@@ -2,3 +2,4 @@ node_modules
 .env
 /generated/prisma
 __pycache__/
+chroma_db/

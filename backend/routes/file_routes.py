@@ -10,6 +10,7 @@ from fastapi import (
 )
 from slowapi import Limiter
 from datetime import datetime, timezone
+from data_pipeline.ingest import process_doc
 from tools.auth import get_current_user
 from services.db_service import db
 import logging
@@ -90,7 +91,7 @@ async def upload(
             detail="An unexpected error occurred while saving the file.",
         )
 
-    background_tasks.add_task(process_file, file_path=file_location, document_id=res.id)
+    background_tasks.add_task(process_doc, str(file_location), res.id, folder_id)
     return {
         "file_id": res.id,
         "filename": original_filename,

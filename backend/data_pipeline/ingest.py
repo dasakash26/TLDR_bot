@@ -1,13 +1,14 @@
 import logging as log
 from pathlib import Path
-from ..services.db_service import db
+from services.db_service import db
 from prisma.enums import FileStatus
-from langchain.document_loaders import UnstructuredFileLoader
+from langchain_unstructured import UnstructuredLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores.utils import filter_complex_metadata
+from services.vector_db import VectorDB
 
 
-async def process_doc(document_id: str, file_path_str: str):
+async def process_doc(file_path_str: str, document_id: str, folder_id: str):
     """
     Load -> split -> embed -> index -> store
     """
@@ -20,7 +21,7 @@ async def process_doc(document_id: str, file_path_str: str):
             where={"id": document_id}, data={"status": FileStatus.PROCESSING}
         )
 
-        loader = UnstructuredFileLoader(file_path_str)
+        loader = UnstructuredLoader(file_path_str)
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000, chunk_overlap=200, add_start_index=True
         )
@@ -32,19 +33,31 @@ async def process_doc(document_id: str, file_path_str: str):
             f"Loaded and split document ID {document_id} into {len(all_splits)} chunks"
         )
 
-        actions = []
-        chunk_metadata = []
-
-        for i, doc_chunk in enumerate(all_splits):
-            chunk_text = doc_chunk.page_content
+        # vector db is singleton
+        vector_db = VectorDB()
+        res = await vector_db.add_documents(
+            documents=all_splits,
+            metadatas=[
+                {"document_id": document_id, "folder_id": folder_id} for _ in all_splits
+            ],
+        )
 
         # Update document status to 'PROCESSED'
         await db.file.update(
             where={"id": document_id}, data={"status": FileStatus.COMPLETED}
         )
+        log.info(f"Completed processing for document ID: {document_id}")
     except Exception as e:
         log.error(f"Error processing document ID {document_id}: {e}", exc_info=True)
         # Update document status to 'FAILED'
         await db.file.update(
             where={"id": document_id}, data={"status": FileStatus.FAILED}
         )
+    finally:
+        try:
+            file_path.unlink()
+            log.info(f"Deleted temporary file: {file_path_str}")
+        except Exception as e:
+            log.error(
+                f"Error deleting temporary file {file_path_str}: {e}", exc_info=True
+            )

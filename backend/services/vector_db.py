@@ -1,22 +1,24 @@
 import asyncio
 import logging
+import os
 import threading
 from pathlib import Path
 from typing import Iterable, Sequence
-
-from langchain.embeddings.huggingface import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.schema import Document
-from langchain_community.vectorstores.chroma import Chroma
+from langchain_chroma import Chroma
 
 logging.basicConfig(level=logging.INFO)
 CHROMA_DB_DIR = Path(__file__).parent.parent / "data_pipeline" / "chroma_db"
+COLLECTION_NAME = "documents_collection"
 
 
 class VectorDB:
     _instance = None
     _lock: threading.Lock = threading.Lock()
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls):
+        os.makedirs(CHROMA_DB_DIR, exist_ok=True)
         if not cls._instance:
             with cls._lock:
                 if not cls._instance:
@@ -52,9 +54,7 @@ class VectorDB:
         try:
             chroma_client = await self._ensure_client()
             prepared_docs = self._merge_documents_with_metadata(documents, metadatas)
-            doc_ids = await chroma_client.aadd_documents(prepared_docs)
-            loop = asyncio.get_running_loop()
-            await loop.run_in_executor(None, chroma_client.persist)
+            doc_ids = await chroma_client.aadd_documents(documents=prepared_docs)
             logging.info(f"Added {len(prepared_docs)} documents to Chroma vector DB.")
             return doc_ids
         except Exception as e:
@@ -89,6 +89,8 @@ class VectorDB:
                         None, self._create_client
                     )
                     logging.info("Chroma vector DB initialized successfully.")
+        if self._chroma_client is None:
+            raise RuntimeError("Failed to initialize Chroma client.")
         return self._chroma_client
 
     def _create_client(self) -> Chroma:
@@ -96,6 +98,7 @@ class VectorDB:
             model_name="sentence-transformers/all-MiniLM-L6-v2"
         )
         return Chroma(
+            collection_name=COLLECTION_NAME,
             persist_directory=str(CHROMA_DB_DIR),
             embedding_function=embeddings,
         )

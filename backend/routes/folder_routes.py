@@ -103,3 +103,47 @@ async def add_user(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
         )
+
+
+# Get files
+@router.get("/{folder_id}/files")
+@limiter.limit(rate_limits["get_folders"])
+async def get_files(
+    request: Request,
+    folder_id: Annotated[str, Path(title="Folder ID")],
+    user=Depends(get_current_user),
+):
+    user_id = user.id
+    try:
+        folder = await db.folder.find_unique(
+            where={"id": folder_id}, include={"files": True, "users": True}
+        )
+        if not folder:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found"
+            )
+
+        if not folder.files or folder.users is None:
+            return []
+
+        if not any(u.id == user_id for u in folder.users):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have access to this folder",
+            )
+
+        return [
+            {"file_id": f.id, "file_name": f.filename, "uploaded_by": f.uploader_id}
+            for f in folder.files
+        ]
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logging.error(
+            f"Error retrieving files for folder {folder_id} by user {user_id}: {e}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
