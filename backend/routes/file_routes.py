@@ -23,6 +23,7 @@ limiter = Limiter(key_func=lambda request: request.client.host)
 
 rate_limits = {
     "upload_file": "10/minute",
+    "status_check": "60/minute",
 }
 
 
@@ -101,8 +102,9 @@ async def upload(
 
 
 # file status route
+@limiter.limit(rate_limits["status_check"])
 @router.get("/status/{file_id}")
-async def file_status(file_id: str, user=Depends(get_current_user)):
+async def file_status(request: Request, file_id: str, user=Depends(get_current_user)):
     if not file_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
