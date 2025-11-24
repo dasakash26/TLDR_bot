@@ -7,6 +7,9 @@ class Settings(BaseSettings):
     database_url: str
     secret_key: str
     jwt_algo: str
+    google_api_key: str
+    langsmith_api_key: str
+    langsmith_tracing: str = "true"
 
 
 settings = Settings()  # type: ignore
