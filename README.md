@@ -27,10 +27,10 @@ Uploaded files are written to `backend/data_pipeline/temp/<user-id>` and ingeste
 - [x] Folder management APIs (create/list/add-user/get-files) with rate limiting.
 - [x] File upload + background ingestion with chunking, embedding, and vector storage.
 - [x] Singleton async Chroma vector database service with metadata-aware document inserts.
-- [ ] Retrieval API exposing semantic search over stored chunks.
-- [ ] Chat route that orchestrates retrieval + LLM generation.
+- [X] Retrieval API exposing semantic search over stored chunks.
+- [X] Chat route that orchestrates retrieval + LLM generation.
 - [ ] LangGraph agent wiring for multi-step reasoning and tool use.
-- [ ] Conversation memory persisted to `Thread`/`Message` tables.
+- [X] Conversation memory persisted to `Thread`/`Message` tables.
 - [ ] Reranking, BM25/Elastic fallback, and response refinement.
 - [ ] Front-end or UI surface for the chatbot experience.
 
