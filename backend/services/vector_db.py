@@ -54,8 +54,16 @@ class VectorDB:
         try:
             chroma_client = await self._ensure_client()
             prepared_docs = self._merge_documents_with_metadata(documents, metadatas)
-            doc_ids = await chroma_client.aadd_documents(documents=prepared_docs)
-            logging.info(f"Added {len(prepared_docs)} documents to Chroma vector DB.")
+            
+            doc_ids = []
+            batch_size = 5000
+            for i in range(0, len(prepared_docs), batch_size):
+                batch = prepared_docs[i : i + batch_size]
+                batch_ids = await chroma_client.aadd_documents(documents=batch)
+                doc_ids.extend(batch_ids)
+                logging.info(f"Added batch of {len(batch)} documents to Chroma vector DB.")
+
+            logging.info(f"Added total {len(prepared_docs)} documents to Chroma vector DB.")
             return doc_ids
         except Exception as e:
             logging.error(
@@ -73,6 +81,8 @@ class VectorDB:
             )
 
             logging.info(f"Queried Chroma vector DB with text: {query_text}")
+            logging.info(f"Retrieved {len(results)} results from Chroma vector DB.")
+            logging.debug(f"Query results: {results}")
             return results
         except Exception as e:
             logging.error(f"Error querying Chroma vector DB: {e}", exc_info=True)

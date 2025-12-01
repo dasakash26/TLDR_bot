@@ -240,6 +240,7 @@ async def chat_in_thread(
 
         async def stream_response():
             full_response = ""
+            collected_citations = []
             try:
                 await db.message.create(
                     data={
@@ -265,15 +266,47 @@ async def chat_in_thread(
                                 "content": content,
                             }
                             yield f"data: {json.dumps(data)}\n\n"
+                    
+                    elif kind == "on_tool_end" and event["name"] == "retrieve":
+                        output = event["data"].get("output")
+                        docs = []
+                        if hasattr(output, "artifact"):
+                            docs = output.artifact
+                        elif isinstance(output, tuple) and len(output) == 2:
+                            docs = output[1]
+                        
+                        if docs:
+                            citations = []
+                            for doc in docs:
+                                title = doc.metadata.get("filename") or doc.metadata.get("source", "Unknown Source")
+                                # If title is a full path, try to get just the filename
+                                if "/" in title or "\\" in title:
+                                    import os
+                                    title = os.path.basename(title)
+                                    
+                                citations.append({
+                                    "id": doc.metadata.get("document_id", "unknown"),
+                                    "title": title,
+                                    "page": doc.metadata.get("page", 1),
+                                    "content": doc.page_content
+                                })
+                            collected_citations = citations
+                            yield f"data: {json.dumps({'type': 'citation', 'citations': citations})}\n\n"
 
                 if full_response:
-                    await db.message.create(
-                        data={
-                            "content": full_response,
-                            "role": ROLE.AI,
-                            "chat_id": thread_id,
-                        }
-                    )
+                    msg_data = {
+                        "content": full_response,
+                        "role": ROLE.AI,
+                        "chat_id": thread_id,
+                    }
+                    if collected_citations:
+                        # Ensure citations are JSON serializable
+                        # Prisma Client Python handles list/dict to JSONB automatically, 
+                        # but sometimes explicit serialization helps if types are ambiguous
+                        from prisma import Json
+                        msg_data["citations"] = Json(collected_citations)
+
+                    await db.message.create(data=msg_data)
                     logging.info(f"Saved messages to database for thread {thread_id}")
 
                 yield f"data: {json.dumps({'type': 'done'})}\n\n"

@@ -8,6 +8,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Message } from "@/types";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function MessageItem({
   message,
@@ -54,7 +60,7 @@ export function MessageItem({
             {isUser ? (
               message.content
             ) : (
-              <div className="prose prose-sm dark:prose-invert max-w-none break-words">
+              <div className="prose prose-sm dark:prose-invert max-w-none break-word">
                 {message.content ? (
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
@@ -131,18 +137,40 @@ export function MessageItem({
         {message.citations && message.citations.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-1 pl-1">
             {message.citations.map((citation) => (
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                key={citation.id}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 border border-border/50 text-xs font-medium text-muted-foreground hover:bg-background hover:text-foreground hover:border-primary/20 hover:shadow-sm transition-all"
-              >
-                <FileText className="w-3 h-3 text-primary/70" />
-                {citation.title}
-                <span className="opacity-40 border-l border-border pl-1.5 ml-0.5">
-                  p.{citation.page}
-                </span>
-              </motion.button>
+              <Popover key={citation.id}>
+                <PopoverTrigger asChild>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 border border-border/50 text-xs font-medium text-muted-foreground hover:bg-background hover:text-foreground hover:border-primary/20 hover:shadow-sm transition-all"
+                  >
+                    <FileText className="w-3 h-3 text-primary/70" />
+                    {citation.title.toString()}
+                    <span className="opacity-40 border-l border-border pl-1.5 ml-0.5">
+                      p.{citation.page}
+                    </span>
+                  </motion.button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0" align="start">
+                  <div className="p-3 border-b border-border/50 bg-muted/20">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      <span className="font-medium text-sm truncate">
+                        {citation.title}
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Page {citation.page}
+                    </div>
+                  </div>
+                  <ScrollArea className="h-[200px] p-3">
+                    <div className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                      {citation.content ||
+                        "No content available for this citation."}
+                    </div>
+                  </ScrollArea>
+                </PopoverContent>
+              </Popover>
             ))}
           </div>
         )}

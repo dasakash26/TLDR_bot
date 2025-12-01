@@ -92,7 +92,9 @@ async def upload(
             detail="An unexpected error occurred while saving the file.",
         )
 
-    background_tasks.add_task(process_doc, str(file_location), res.id, folder_id)
+    background_tasks.add_task(
+        process_doc, str(file_location), res.id, folder_id, original_filename
+    )
     return {
         "file_id": res.id,
         "filename": original_filename,

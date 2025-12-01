@@ -10,11 +10,9 @@ import {
   Sparkles,
   ArrowUp,
   ArrowDown,
-  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useSearchParams } from "next/navigation";
 import { useChat, useThread } from "@/hooks/use-chat";
@@ -37,7 +35,6 @@ export function ChatArea() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
-  // Sync local messages with thread messages
   useEffect(() => {
     if (thread?.messages) {
       setLocalMessages(thread.messages);
@@ -53,12 +50,10 @@ export function ChatArea() {
     }
   };
 
-  // Auto-scroll on new messages
   useEffect(() => {
     scrollToBottom();
   }, [localMessages, isStreaming]);
 
-  // Handle scroll visibility
   const handleScroll = () => {
     if (scrollRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
@@ -80,7 +75,6 @@ export function ChatArea() {
     setLocalMessages((prev) => [...prev, userMessage]);
     setInput("");
 
-    // Optimistic AI message
     const aiMessageId = (Date.now() + 1).toString();
     setLocalMessages((prev) => [
       ...prev,
@@ -92,15 +86,25 @@ export function ChatArea() {
       },
     ]);
 
-    await sendMessage(input, (chunk) => {
-      setLocalMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === aiMessageId
-            ? { ...msg, content: msg.content + chunk } // Simple append, ideally handle full replacement or smarter merge
-            : msg
-        )
-      );
-    });
+    await sendMessage(
+      input,
+      (chunk) => {
+        setLocalMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === aiMessageId
+              ? { ...msg, content: msg.content + chunk } // Simple append, ideally handle full replacement or smarter merge
+              : msg
+          )
+        );
+      },
+      (citations) => {
+        setLocalMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === aiMessageId ? { ...msg, citations: citations } : msg
+          )
+        );
+      }
+    );
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

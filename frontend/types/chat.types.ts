@@ -3,7 +3,7 @@ export interface Message {
   role: "USER" | "AI";
   content: string;
   createdAt: string;
-  citations?: { id: number; title: string; page: number }[];
+  citations?: { id: string; title: string; page: number; content?: string }[];
 }
 
 export interface Thread {

@@ -224,7 +224,11 @@ export function useChat(threadId: string) {
   const queryClient = useQueryClient();
 
   const sendMessage = useCallback(
-    async (message: string, onChunk: (chunk: string) => void) => {
+    async (
+      message: string,
+      onChunk: (chunk: string) => void,
+      onCitation?: (citations: any[]) => void
+    ) => {
       setIsStreaming(true);
       try {
         const response = await fetchClient(`/thread/${threadId}/chat`, {
@@ -263,6 +267,8 @@ export function useChat(threadId: string) {
               const data = JSON.parse(dataStr);
               if (data.type === "message") {
                 onChunk(data.content);
+              } else if (data.type === "citation") {
+                if (onCitation) onCitation(data.citations);
               } else if (data.type === "error") {
                 toast.error(data.message);
               } else if (data.type === "done") {

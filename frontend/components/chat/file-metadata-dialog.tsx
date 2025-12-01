@@ -13,7 +13,6 @@ import {
   Calendar,
   User,
   Folder,
-  HardDrive,
   Activity,
 } from "lucide-react";
 import { format } from "date-fns";

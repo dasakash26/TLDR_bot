@@ -84,6 +84,7 @@ model Message {
   id        String   @id @default(cuid())
   content   String
   role      ROLE
+  citations Json?
   chat_id   String
   chat      Thread   @relation(fields: [chat_id], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())

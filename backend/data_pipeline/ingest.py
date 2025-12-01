@@ -8,7 +8,9 @@ from langchain_community.vectorstores.utils import filter_complex_metadata
 from services.vector_db import VectorDB
 
 
-async def process_doc(file_path_str: str, document_id: str, folder_id: str):
+async def process_doc(
+    file_path_str: str, document_id: str, folder_id: str, original_filename: str = None
+):
     """
     Load -> split -> embed -> index -> store
     """
@@ -38,9 +40,19 @@ async def process_doc(file_path_str: str, document_id: str, folder_id: str):
         res = await vector_db.add_documents(
             documents=all_splits,
             metadatas=[
-                {"document_id": document_id, "folder_id": folder_id} for _ in all_splits
+                {
+                    "document_id": document_id,
+                    "folder_id": folder_id,
+                    "filename": original_filename or Path(file_path_str).name,
+                }
+                for _ in all_splits
             ],
         )
+
+        if len(res) != len(all_splits):
+            raise Exception(
+                f"Failed to add all documents to vector DB. Expected {len(all_splits)}, got {len(res)}"
+            )
 
         await db.filechunk.create_many(
             data=[
