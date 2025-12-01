@@ -16,9 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TLDR Bot - AI-Powered Document Assistant",
+  title: "Recap - AI-Powered Document Assistant",
   description:
-    "Chat with your documents, organize knowledge, and get instant summaries with TLDR Bot. Your personal AI research assistant.",
+    "Chat with your documents, organize knowledge, and get instant summaries with Recap. Your personal AI research assistant.",
   keywords: [
     "AI",
     "Chatbot",
@@ -28,20 +28,20 @@ export const metadata: Metadata = {
     "Knowledge Base",
     "Research",
   ],
-  authors: [{ name: "TLDR Bot Team" }],
+  authors: [{ name: "Recap Team" }],
   openGraph: {
-    title: "TLDR Bot - AI-Powered Document Assistant",
+    title: "Recap - AI-Powered Document Assistant",
     description:
-      "Chat with your documents, organize knowledge, and get instant summaries with TLDR Bot.",
+      "Chat with your documents, organize knowledge, and get instant summaries with Recap.",
     type: "website",
     locale: "en_US",
-    siteName: "TLDR Bot",
+    siteName: "Recap",
   },
   twitter: {
     card: "summary_large_image",
-    title: "TLDR Bot - AI-Powered Document Assistant",
+    title: "Recap - AI-Powered Document Assistant",
     description:
-      "Chat with your documents, organize knowledge, and get instant summaries with TLDR Bot.",
+      "Chat with your documents, organize knowledge, and get instant summaries with Recap.",
   },
 };
 

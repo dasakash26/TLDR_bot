@@ -1,6 +1,6 @@
-# TLDR Bot
+# Recap
 
-An intelligent, retrieval-augmented conversational AI system designed to answer questions from uploaded documents. Built with FastAPI, LangGraph, and ChromaDB, TLDR Bot provides folder-based document organization, semantic search, and streaming chat responses powered by Google's Gemini 2.5 Flash.
+An intelligent, retrieval-augmented conversational AI system designed to answer questions from uploaded documents. Built with FastAPI, LangGraph, and ChromaDB, Recap provides folder-based document organization, semantic search, and streaming chat responses powered by Google's Gemini 2.5 Flash.
 
 ## Features
 
@@ -50,7 +50,7 @@ Data flows from user uploads through the ingestion pipeline into vector storage,
 ## Project Structure
 
 ```
-TLDR_bot/
+Recap/
 ├── backend/
 │   ├── main.py                      # FastAPI application entry point
 │   ├── pyproject.toml              # Python dependencies and project metadata
@@ -117,8 +117,8 @@ TLDR_bot/
 Clone the repository and navigate to the backend directory:
 
 ```bash
-git clone https://github.com/dasakash26/TLDR_bot.git
-cd TLDR_bot/backend
+git clone https://github.com/dasakash26/Recap.git
+cd Recap/backend
 ```
 
 Install dependencies using uv or pip:
@@ -130,7 +130,7 @@ uv sync
 Create a `.env` file in the backend directory with the following variables:
 
 ```
-DATABASE_URL=postgresql://user:password@localhost:5432/tldrbot
+DATABASE_URL=postgresql://user:password@localhost:5432/recap
 SECRET_KEY=your-secret-key-here
 GOOGLE_API_KEY=your-gemini-api-key
 ```
