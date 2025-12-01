@@ -13,6 +13,8 @@ from tools.auth import get_current_user
 from agent.executor import agent
 
 
+from .models import ChatReq, CreateThreadReq, UpdateThreadReq
+
 router = APIRouter()
 limiter = Limiter(key_func=lambda request: request.client.host)
 
@@ -29,16 +31,15 @@ rate_limits = {
 @router.post("/")
 async def create_thread(
     request: Request,
-    folder_id: str,
-    thread_name: str = "New Thread",
+    data: CreateThreadReq,
     user=Depends(get_current_user),
 ):
     user_id = user.id
     try:
         res = await db.thread.create(
             data={
-                "name": thread_name,
-                "folder_id": folder_id,
+                "name": data.thread_name,
+                "folder_id": data.folder_id,
             }
         )
 
@@ -118,7 +119,7 @@ async def get_thread(request: Request, thread_id: str, user=Depends(get_current_
 async def update_thread(
     request: Request,
     thread_id: str,
-    new_name: str,
+    data: UpdateThreadReq,
     user=Depends(get_current_user),
 ):
     user_id = user.id
@@ -142,7 +143,7 @@ async def update_thread(
 
         updated_thread = await db.thread.update(
             where={"id": thread_id},
-            data={"name": new_name},
+            data={"name": data.new_name},
         )
 
         if not updated_thread:
@@ -206,10 +207,11 @@ async def delete_thread(
 async def chat_in_thread(
     request: Request,
     thread_id: str,
-    message: str,
+    data: ChatReq,
     user=Depends(get_current_user),
 ):
     user_id = user.id
+    message = data.message
     try:
         thread = await db.thread.find_unique(
             where={"id": thread_id},
@@ -247,25 +249,22 @@ async def chat_in_thread(
                     }
                 )
 
-                async for chunk in agent.astream(
+                async for event in agent.astream_events(
                     {"messages": [HumanMessage(content=message)]},
-                    stream_mode="values",
+                    version="v2",
                     config=config,
                 ):
-                    if "messages" in chunk:
-                        messages = chunk["messages"]
-                        if messages and len(messages) > 0:
-                            last_message = messages[-1]
-                            if (
-                                hasattr(last_message, "content")
-                                and last_message.type == "ai"
-                            ):
-                                full_response = last_message.content
-                                data = {
-                                    "type": "message",
-                                    "content": last_message.content,
-                                }
-                                yield f"data: {json.dumps(data)}\n\n"
+                    kind = event["event"]
+                    
+                    if kind == "on_chat_model_stream":
+                        content = event["data"]["chunk"].content
+                        if content:
+                            full_response += content
+                            data = {
+                                "type": "message",
+                                "content": content,
+                            }
+                            yield f"data: {json.dumps(data)}\n\n"
 
                 if full_response:
                     await db.message.create(
@@ -298,6 +297,41 @@ async def chat_in_thread(
         raise
     except Exception as e:
         logging.error(f"Error in chat endpoint for thread {thread_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
+
+
+@limiter.limit(rate_limits["get_threads"])
+@router.get("/recent/all")
+async def get_recent_threads(request: Request, user=Depends(get_current_user)):
+    user_id = user.id
+    try:
+        threads = await db.thread.find_many(
+            where={
+                "folder": {
+                    "users": {"some": {"id": user_id}}
+                }
+            },
+            order={"updatedAt": "desc"},
+            take=10,
+            include={"folder": True}
+        )
+
+        return {
+            "threads": [
+                {
+                    "id": t.id,
+                    "name": t.name,
+                    "updatedAt": t.updatedAt,
+                    "folder_name": t.folder.name if t.folder else "Unknown"
+                }
+                for t in threads
+            ]
+        }
+    except Exception as e:
+        logging.error(f"Error fetching recent threads for user {user_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",

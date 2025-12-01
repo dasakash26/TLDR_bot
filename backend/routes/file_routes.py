@@ -127,3 +127,103 @@ async def file_status(request: Request, file_id: str, user=Depends(get_current_u
         "uploaded_at": file_record.createdAt,
         "processed_at": file_record.updatedAt,
     }
+
+
+# Get File Details
+@router.get("/{file_id}")
+@limiter.limit(rate_limits["status_check"])
+async def get_file_details(
+    request: Request,
+    file_id: str,
+    user=Depends(get_current_user),
+):
+    user_id = user.id
+    try:
+        file_record = await db.file.find_unique(
+            where={"id": file_id},
+            include={
+                "folder": True,
+                "uploader": True,
+            },
+        )
+
+        if not file_record:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="File not found"
+            )
+
+        # Check permission (if user is in the folder's user list)
+        # We need to verify if the user has access to this folder
+        folder = await db.folder.find_first(
+            where={
+                "id": file_record.folder_id,
+                "users": {"some": {"id": user_id}},
+            }
+        )
+
+        if not folder:
+             raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied",
+            )
+
+        return {
+            "id": file_record.id,
+            "filename": file_record.filename,
+            "status": file_record.status,
+            "file_url": file_record.file_url,
+            "created_at": file_record.createdAt,
+            "updated_at": file_record.updatedAt,
+            "folder_name": file_record.folder.name,
+            "uploader_name": file_record.uploader.name or file_record.uploader.email,
+            "size": "Unknown", # Prisma schema doesn't have size yet, maybe add later
+            "type": Path(file_record.filename).suffix,
+        }
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logging.error(f"Error fetching file details {file_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
+
+
+# Delete File
+@router.delete("/{file_id}")
+@limiter.limit(rate_limits["upload_file"])
+async def delete_file(
+    request: Request,
+    file_id: str,
+    user=Depends(get_current_user),
+):
+    user_id = user.id
+    try:
+        file_record = await db.file.find_unique(where={"id": file_id})
+        if not file_record:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="File not found"
+            )
+
+        if file_record.uploader_id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to delete this file",
+            )
+
+        await db.file.delete(where={"id": file_id})
+
+        # TODO: Also delete the actual file from storage if needed
+        # For now, we just delete the record
+
+        return {"message": f"File {file_id} deleted successfully"}
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logging.error(f"Error deleting file {file_id} by user {user_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )

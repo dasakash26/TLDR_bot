@@ -18,3 +18,24 @@ class LoginReq(BaseModel):
 class VerificationReq(BaseModel):
     email: EmailStr
     otp: str = Field(min_length=6, max_length=6, description="OTP should have len 6")
+
+
+class ResendOtpReq(BaseModel):
+    email: EmailStr
+
+
+class ChatReq(BaseModel):
+    message: str
+
+
+class CreateThreadReq(BaseModel):
+    folder_id: str
+    thread_name: str = "New Thread"
+
+
+class UpdateThreadReq(BaseModel):
+    new_name: str
+
+
+class UpdateFolderReq(BaseModel):
+    new_name: str

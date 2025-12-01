@@ -4,6 +4,7 @@ from slowapi import Limiter
 from services.db_service import db
 import logging
 from tools.auth import get_current_user
+from .models import UpdateFolderReq
 
 router = APIRouter()
 limiter = Limiter(key_func=lambda request: request.client.host)
@@ -46,9 +47,32 @@ async def create_folder(
 async def get_folders(request: Request, user=Depends(get_current_user)):
     user_id = user.id
     try:
-        folders = await db.folder.find_many(where={"users": {"some": {"id": user_id}}})
+        folders = await db.folder.find_many(
+            where={"users": {"some": {"id": user_id}}},
+            include={"files": True, "threads": True},
+        )
         return [
-            {"folder_id": f.id, "name": f.name, "created_by": f.created_by}
+            {
+                "folder_id": f.id,
+                "name": f.name,
+                "created_by": f.created_by,
+                "files": [
+                    {
+                        "file_id": file.id,
+                        "file_name": file.filename,
+                        "uploaded_by": file.uploader_id,
+                    }
+                    for file in f.files
+                ],
+                "threads": [
+                    {
+                        "id": thread.id,
+                        "name": thread.name,
+                        "createdAt": thread.createdAt,
+                    }
+                    for thread in f.threads
+                ],
+            }
             for f in folders
         ]
 
@@ -179,6 +203,45 @@ async def get_files(
         logging.error(
             f"Error retrieving files for folder {folder_id} by user {user_id}: {e}"
         )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
+
+
+# Update Folder
+@router.put("/{folder_id}")
+@limiter.limit(rate_limits["create_folder"])
+async def update_folder(
+    request: Request,
+    folder_id: Annotated[str, Path(title="Folder ID")],
+    data: UpdateFolderReq,
+    user=Depends(get_current_user),
+):
+    user_id = user.id
+    try:
+        folder = await db.folder.find_unique(where={"id": folder_id})
+        if not folder:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found"
+            )
+
+        if folder.created_by != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only the folder creator can update the folder",
+            )
+
+        updated_folder = await db.folder.update(
+            where={"id": folder_id}, data={"name": data.new_name}
+        )
+
+        return {"folder_id": updated_folder.id, "name": updated_folder.name}
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logging.error(f"Error updating folder {folder_id} by user {user_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",

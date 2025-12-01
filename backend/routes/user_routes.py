@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import Response
 from core.config import settings
-from .models import LoginReq, SignupReq, VerificationReq
+from .models import LoginReq, SignupReq as registerReq, VerificationReq, ResendOtpReq
 from tools.otp_gen import gen_otp
 from services.db_service import db
 import logging
@@ -23,9 +23,9 @@ logging.basicConfig(
 )
 
 
-@router.post("/signup")
+@router.post("/register")
 @limiter.limit("5/minute")
-async def signup(request: Request, data: SignupReq):
+async def register(request: Request, data: registerReq):
     # existing user check
     existing_user = await db.user.find_unique(where={"email": data.email})
 
@@ -75,7 +75,7 @@ async def signup(request: Request, data: SignupReq):
 
     # send mail with otp
     logging.info(f"OTP for {data.email} is {plain_otp}")
-    return {"message": "Signup successful. Please verify your email."}
+    return {"message": "register successful. Please verify your email."}
 
 
 @router.post("/verify")
@@ -118,9 +118,14 @@ async def login(request: Request, data: LoginReq, res: Response):
             status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
         )
 
-    if not verify_secret(data.password, user.password) or not user.is_verified:
+    if not verify_secret(data.password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
+        )
+
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Account not verified"
         )
 
     token_payload = {
@@ -162,3 +167,21 @@ async def logout(
 ):
     res.delete_cookie(key="access_token")
     return {"message": "Logout successful."}
+
+
+@router.post("/resend-otp")
+@limiter.limit("3/minute")
+async def resend_otp(request: Request, data: ResendOtpReq):
+    user = await db.user.find_unique(where={"email": data.email})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.is_verified:
+        raise HTTPException(status_code=400, detail="User already verified")
+
+    # Gen new OTP
+    plain_otp = gen_otp()
+    hashed_otp = hash_secret(plain_otp)
+
+    await db.user.update(where={"email": data.email}, data={"otp": hashed_otp})
+    logging.info(f"OTP for {data.email} is {plain_otp}")
+    return {"message": "OTP resent successfully"}
