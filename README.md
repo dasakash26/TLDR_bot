@@ -1,4 +1,4 @@
-# Recap
+# Recap: Agentic RAG Chat System
 
 An intelligent, retrieval-augmented conversational AI system designed to answer questions from uploaded documents. Built with FastAPI, LangGraph, and ChromaDB, Recap provides folder-based document organization, semantic search, and streaming chat responses powered by Google's Gemini 2.5 Flash.
 
@@ -86,6 +86,12 @@ Recap/
 │   │   └── migrations/            # Version-controlled schema changes
 │   │
 │   └── generated/                  # Auto-generated Prisma client code
+│
+├── frontend/                   # Next.js Frontend application
+│   ├── app/                   # App router pages
+│   ├── components/            # React components
+│   ├── lib/                   # Utility functions
+│   └── types/                 # TypeScript definitions
 │
 ├── core/
 │   └── RAG.ipynb                   # Research and prototyping notebook
@@ -266,23 +272,23 @@ Retrieval operations are scoped to the folder containing the thread, ensuring us
 
 **Phase 1: Frontend Development**
 
-- [ ] Set up Next.js project structure with TypeScript
-- [ ] Implement authentication UI (login, signup, verification)
+- [x] Set up Next.js project structure with TypeScript
+- [x] Implement authentication UI (login, signup, verification)
 - [ ] Build folder management dashboard
 - [ ] Create file upload interface with drag-and-drop
-- [ ] Design chat interface with message history
-- [ ] Add real-time SSE integration for streaming responses
+- [x] Design chat interface with message history
+- [x] Add real-time SSE integration for streaming responses
 - [ ] Implement thread switcher and conversation management
 - [ ] Add loading states and error handling
-- [ ] Responsive design for mobile and desktop
+- [x] Responsive design for mobile and desktop
 
 **Phase 2: Enhanced Search & Retrieval**
 
 - [ ] Integrate BM25 for keyword-based search
 - [ ] Implement hybrid search scoring mechanism
 - [ ] Add cross-encoder reranking for top results
-- [ ] Build source citation tracking system
-- [ ] Display document references in chat responses
+- [x] Build source citation tracking system
+- [x] Display document references in chat responses
 - [ ] Add relevance score visualization
 - [ ] Implement search result highlighting
 
@@ -362,4 +368,4 @@ This project is licensed under the MIT License. See the LICENSE file for details
 
 ---
 
-**Project Status:** The backend API is production-ready with full RAG chat capabilities. Frontend development is planned for the next phase.
+**Project Status:** The backend API is production-ready with full RAG chat capabilities. Frontend development is in active progress with core features (Auth, Chat, Citations) implemented.
