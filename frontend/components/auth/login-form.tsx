@@ -136,17 +136,17 @@ export function LoginForm() {
                 disabled={isLoading || !email || !password}
                 className="w-full h-12 text-base font-medium transition-all duration-200 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                {isLoading ? "Signing in..." : "Sign In"}
+                {isLoading ? "Logging in..." : "Log In"}
               </Button>
             </form>
 
             <p className="mt-8 text-center text-sm text-muted-foreground">
               Don't have an account?{" "}
               <Link
-                href="/auth/register"
+                href="/register"
                 className="font-medium text-foreground hover:underline"
               >
-                Sign up
+                Register
               </Link>
             </p>
           </div>

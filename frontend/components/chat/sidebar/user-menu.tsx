@@ -23,8 +23,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useLogout } from "@/hooks/use-auth";
 
 export function UserMenu() {
+  const { mutate: logout } = useLogout();
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -86,7 +89,7 @@ export function UserMenu() {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => logout()}>
               <LogOut className="mr-2 size-4" />
               Log out
             </DropdownMenuItem>

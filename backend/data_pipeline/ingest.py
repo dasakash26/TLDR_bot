@@ -3,6 +3,7 @@ from pathlib import Path
 from services.db_service import db
 from prisma.enums import FileStatus
 from langchain_unstructured import UnstructuredLoader
+from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores.utils import filter_complex_metadata
 from services.vector_db import VectorDB
@@ -15,7 +16,9 @@ async def process_doc(
     Load -> split -> embed -> index -> store
     """
     file_path = Path(file_path_str)
+    file_size = file_path.stat().st_size
     all_splits = []
+    page_count = None
 
     try:
         log.info(f"Starting processing for document ID: {document_id}")
@@ -23,12 +26,19 @@ async def process_doc(
             where={"id": document_id}, data={"status": FileStatus.PROCESSING}
         )
 
-        loader = UnstructuredLoader(file_path_str)
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000, chunk_overlap=200, add_start_index=True
         )
 
-        all_splits = loader.load_and_split(text_splitter)
+        if file_path_str.lower().endswith(".pdf"):
+            loader = PyPDFLoader(file_path_str)
+            docs = loader.load()
+            page_count = len(docs)
+            all_splits = text_splitter.split_documents(docs)
+        else:
+            loader = UnstructuredLoader(file_path_str)
+            all_splits = loader.load_and_split(text_splitter)
+
         filter_complex_metadata(all_splits, allowed_types=(str, int, float, bool))
 
         log.info(
@@ -44,6 +54,8 @@ async def process_doc(
                     "document_id": document_id,
                     "folder_id": folder_id,
                     "filename": original_filename or Path(file_path_str).name,
+                    "file_size": file_size,
+                    "page_count": page_count or 0,
                 }
                 for _ in all_splits
             ],
@@ -65,9 +77,13 @@ async def process_doc(
             ]
         )
 
-        # Update document status to 'PROCESSED'
         await db.file.update(
-            where={"id": document_id}, data={"status": FileStatus.COMPLETED}
+            where={"id": document_id},
+            data={
+                "status": FileStatus.COMPLETED,
+                "page_count": page_count,
+                "file_size": file_size,
+            },
         )
         log.info(f"Completed processing for document ID: {document_id}")
     except Exception as e:

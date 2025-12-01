@@ -25,6 +25,11 @@ async def retrieve(query: str, config: RunnableConfig):
 
     folder_id = config.get("configurable", {}).get("folder_id")
     filter_metadata = {"folder_id": folder_id} if folder_id else None
+    
+    # If the query is very generic like "what are the chapters", we might want to broaden the search
+    # or rely on the fact that the vector store will return the most relevant chunks anyway.
+    # However, for "chapters", we might need to search for "Table of Contents" or similar terms if the query is vague.
+    
     retrieved_docs = await vector_store.query(query, filter_metadata, top_k=5)
     serialized_chunks = []
     for idx, doc in enumerate(retrieved_docs, start=1):
@@ -39,6 +44,8 @@ async def retrieve(query: str, config: RunnableConfig):
 
 def query_or_respond(state: MessagesState):
     """Generate tool-call for retrieve or respond directly."""
+    # We can optionally check if we have files in the context to guide the LLM
+    # But for now, let's just bind the tool.
     llm_with_tools = llm.bind_tools([retrieve])
     res = llm_with_tools.invoke(state["messages"])
     return {"messages": [res]}

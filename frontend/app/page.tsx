@@ -26,16 +26,16 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-2">
             <ModeToggle />
-            <Link href="/auth/login">
+            <Link href="/login">
               <Button
                 variant="ghost"
                 size="sm"
                 className="font-medium text-muted-foreground hover:text-foreground rounded-full px-4"
               >
-                Sign In
+                Log In
               </Button>
             </Link>
-            <Link href="/auth/register">
+            <Link href="/chat">
               <Button
                 size="sm"
                 className="font-semibold rounded-full px-5 shadow-lg shadow-primary/20 h-9 text-sm"
@@ -86,7 +86,7 @@ export default function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full sm:w-auto">
-              <Link href="/auth/register" className="w-full sm:w-auto">
+              <Link href="/chat" className="w-full sm:w-auto">
                 <Button
                   size="lg"
                   className="w-full sm:w-auto h-12 px-8 text-base font-semibold rounded-full shadow-xl shadow-primary/20 hover:shadow-primary/30 transition-all hover:-translate-y-1"

@@ -279,15 +279,22 @@ async def chat_in_thread(
                             citations = []
                             for doc in docs:
                                 title = doc.metadata.get("filename") or doc.metadata.get("source", "Unknown Source")
-                                # If title is a full path, try to get just the filename
                                 if "/" in title or "\\" in title:
                                     import os
                                     title = os.path.basename(title)
                                     
+                                page = doc.metadata.get("page")
+                                if page is not None:
+                                    page = page + 1
+                                else:
+                                    page = doc.metadata.get("page_number", 1)
+
                                 citations.append({
                                     "id": doc.metadata.get("document_id", "unknown"),
                                     "title": title,
-                                    "page": doc.metadata.get("page", 1),
+                                    "page": page,
+                                    "total_pages": doc.metadata.get("page_count"),
+                                    "file_size": doc.metadata.get("file_size"),
                                     "content": doc.page_content
                                 })
                             collected_citations = citations

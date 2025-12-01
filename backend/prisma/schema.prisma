@@ -44,6 +44,8 @@ model File {
   filename    String
   status      FileStatus  @default(PENDING)
   file_url    String?
+  page_count  Int?
+  file_size   Int?
   file_chunks FileChunk[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
@@ -52,7 +54,7 @@ model File {
   uploader    User   @relation(fields: [uploader_id], references: [id], onDelete: Cascade)
 
   folder_id String
-  folder    Folder @relation(fields: [folder_id], references: [id])
+  folder    Folder @relation(fields: [folder_id], references: [id], onDelete: Cascade)
 }
 
 model FileChunk {

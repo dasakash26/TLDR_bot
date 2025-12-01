@@ -50,7 +50,7 @@ export function useRegister(onSuccess?: () => void) {
   });
 }
 
-export const useVerifyOTP = () => {
+export function useVerifyOTP() {
   const router = useRouter();
   return useMutation({
     mutationFn: async (data: OtpVerifyData) => {
@@ -99,7 +99,7 @@ export const useResendOTP = () => {
   });
 };
 
-export const useLogin = (onError?: (error: Error) => void) => {
+export function useLogin(onError?: (error: Error) => void) {
   const router = useRouter();
   return useMutation({
     mutationFn: async (data: LoginData) => {
@@ -125,3 +125,29 @@ export const useLogin = (onError?: (error: Error) => void) => {
     },
   });
 };
+
+export function useLogout() {
+  const router = useRouter();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetchClient("/user/logout", {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        throw new Error(await getErrorMessage(res));
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success("Logged out successfully!");
+      router.push("/");
+      router.refresh();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Logout failed");
+    },
+  });
+}
+
+
