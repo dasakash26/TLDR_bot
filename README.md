@@ -47,58 +47,6 @@ The system follows a layered architecture separating concerns between API routes
 
 Data flows from user uploads through the ingestion pipeline into vector storage, then back out through the retrieval system during chat interactions. The agent layer sits between the API and the AI components, managing tool calls and response generation.
 
-## Project Structure
-
-```
-Recap/
-├── backend/
-│   ├── main.py                      # FastAPI application entry point
-│   ├── pyproject.toml              # Python dependencies and project metadata
-│   │
-│   ├── routes/                     # HTTP endpoint handlers
-│   │   ├── user_routes.py         # Authentication endpoints
-│   │   ├── folder_routes.py       # Folder management endpoints
-│   │   ├── file_routes.py         # File upload and status endpoints
-│   │   └── thread_routes.py       # Chat thread and messaging endpoints
-│   │
-│   ├── agent/                      # LangGraph RAG agent implementation
-│   │   ├── executor.py            # Agent graph definition and nodes
-│   │   └── prompts.py             # System prompt templates
-│   │
-│   ├── services/                   # Business logic services
-│   │   ├── db_service.py          # Database client singleton
-│   │   └── vector_db.py           # Vector database wrapper
-│   │
-│   ├── tools/                      # Shared utilities
-│   │   ├── auth.py                # JWT and password utilities
-│   │   ├── otp_gen.py             # OTP generation logic
-│   │   └── rag_tool.py            # RAG helper functions
-│   │
-│   ├── data_pipeline/              # Document processing pipeline
-│   │   ├── ingest.py              # Document chunking and embedding
-│   │   ├── retrieval.py           # Search utilities
-│   │   ├── chroma_db/             # Vector store persistence directory
-│   │   ├── sources/               # Source document storage
-│   │   └── temp/                  # Temporary upload staging
-│   │
-│   ├── prisma/                     # Database schema and migrations
-│   │   ├── schema.prisma          # Data model definitions
-│   │   └── migrations/            # Version-controlled schema changes
-│   │
-│   └── generated/                  # Auto-generated Prisma client code
-│
-├── frontend/                   # Next.js Frontend application
-│   ├── app/                   # App router pages
-│   ├── components/            # React components
-│   ├── lib/                   # Utility functions
-│   └── types/                 # TypeScript definitions
-│
-├── core/
-│   └── RAG.ipynb                   # Research and prototyping notebook
-│
-└── README.md
-```
-
 ## Technology Stack
 
 **Backend Framework:** FastAPI with Python 3.12+  
@@ -156,70 +104,6 @@ uv run uvicorn main:app --reload
 
 The API will be available at `http://127.0.0.1:8000`. Documentation is accessible at `http://127.0.0.1:8000/docs`.
 
-## API Reference
-
-### User Endpoints
-
-**POST /user/signup**  
-Create a new user account. Requires email and password. Sends verification OTP to email.
-
-**POST /user/verify**  
-Verify email address using OTP sent during signup.
-
-**POST /user/login**  
-Authenticate and receive JWT access token. Requires verified email.
-
-**GET /user/me**  
-Retrieve current authenticated user information.
-
-**POST /user/logout**  
-Invalidate current session token.
-
-### Folder Endpoints
-
-**POST /folder**  
-Create a new document folder.
-
-**GET /folder**  
-List all folders accessible to current user (owned or shared).
-
-**POST /folder/{folder_id}/add_user**  
-Add a collaborator to folder by email.
-
-**DELETE /folder/{folder_id}**  
-Delete folder and all associated files and threads.
-
-**GET /folder/{folder_id}/files**  
-List all files uploaded to the folder.
-
-### File Endpoints
-
-**POST /file/upload**  
-Upload one or more files to a folder. Initiates background processing.
-
-**GET /file/status/{file_id}**  
-Check processing status of an uploaded file.
-
-### Thread Endpoints
-
-**POST /thread**  
-Create a new conversation thread in a folder.
-
-**GET /thread/all**  
-List all threads in a specified folder.
-
-**GET /thread/{thread_id}**  
-Retrieve thread details including full message history.
-
-**PUT /thread/{thread_id}**  
-Update thread name.
-
-**DELETE /thread/{thread_id}**  
-Delete thread and all associated messages.
-
-**POST /thread/{thread_id}/chat**  
-Send a message and receive streaming AI response via Server-Sent Events.
-
 ## How It Works
 
 ### Document Ingestion
@@ -274,16 +158,16 @@ Retrieval operations are scoped to the folder containing the thread, ensuring us
 
 - [x] Set up Next.js project structure with TypeScript
 - [x] Implement authentication UI (login, signup, verification)
-- [ ] Build folder management dashboard
-- [ ] Create file upload interface with drag-and-drop
+- [x] Build folder management dashboard
 - [x] Design chat interface with message history
 - [x] Add real-time SSE integration for streaming responses
-- [ ] Implement thread switcher and conversation management
-- [ ] Add loading states and error handling
+- [x] Implement thread switcher and conversation management
+- [x] Add loading states and error handling
 - [x] Responsive design for mobile and desktop
 
 **Phase 2: Enhanced Search & Retrieval**
 
+- [ ] Auto complete input message.
 - [ ] Integrate BM25 for keyword-based search
 - [ ] Implement hybrid search scoring mechanism
 - [ ] Add cross-encoder reranking for top results
@@ -304,13 +188,13 @@ Retrieval operations are scoped to the folder containing the thread, ensuring us
 
 **Phase 4: Performance & Scalability**
 
-- [ ] Redis integration for embedding cache
+- [ ] Redis integration for embedding cache, and chat memory
 - [ ] Implement batch embedding generation
 - [ ] Add database connection pooling
 - [ ] Optimize chunk retrieval queries
 - [ ] Add pagination for large result sets
 - [ ] Implement lazy loading for message history
-- [ ] Background job queue for file processing
+- [x] Background job queue for file processing
 
 **Phase 5: Observability & Testing**
 
