@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { AuthBranding } from "@/components/auth/auth-branding";
-import { RegisterForm } from "@/components/auth/register-form";
-import { OTPVerification } from "@/components/auth/otp-verification";
+import { AuthBranding, RegisterForm, OTPVerification } from "@/components/auth";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import Link from "next/link";
 import { useRegister, useVerifyOTP } from "@/hooks/use-auth";
@@ -40,7 +38,7 @@ export default function RegisterPage() {
 
   const handleResendOTP = () => {
     register(formData);
-  }
+  };
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">

@@ -1,8 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import { ChatArea } from "@/components/chat/chat-area";
-import { ChatSkeleton } from "@/components/chat/chat-skeleton";
+import { ChatArea, ChatSkeleton } from "@/components/chat";
 
 export default function ChatPage() {
   return (

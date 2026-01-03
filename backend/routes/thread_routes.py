@@ -19,7 +19,7 @@ router = APIRouter()
 limiter = Limiter(key_func=lambda request: request.client.host)
 
 rate_limits = {
-    "chreat_thread": "30/minute",
+    "create_thread": "30/minute",
     "get_threads": "60/minute",
     "update_thread": "20/minute",
     "delete_thread": "20/minute",
@@ -27,7 +27,7 @@ rate_limits = {
 }
 
 
-@limiter.limit(rate_limits["chreat_thread"])
+@limiter.limit(rate_limits["create_thread"])
 @router.post("/")
 async def create_thread(
     request: Request,
@@ -36,6 +36,19 @@ async def create_thread(
 ):
     user_id = user.id
     try:
+        folder = await db.folder.find_first(
+            where={
+                "id": data.folder_id,
+                "users": {"some": {"id": user_id}},
+            }
+        )
+
+        if not folder:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Folder not found or access denied",
+            )
+
         res = await db.thread.create(
             data={
                 "name": data.thread_name,
@@ -43,7 +56,9 @@ async def create_thread(
             }
         )
 
-        return {"thread_id": res.id, "name": res.name}
+        return {"id": res.id, "name": res.name, "folderId": res.folder_id, "createdAt": res.createdAt}
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"Error creating thread for user {user_id}: {e}")
         raise HTTPException(
@@ -152,7 +167,7 @@ async def update_thread(
                 detail="Failed to update thread",
             )
 
-        return {"thread_id": updated_thread.id, "name": updated_thread.name}
+        return {"id": updated_thread.id, "name": updated_thread.name, "folderId": updated_thread.folder_id, "updatedAt": updated_thread.updatedAt}
     except HTTPException:
         raise
     except Exception as e:
@@ -365,7 +380,7 @@ async def get_recent_threads(request: Request, user=Depends(get_current_user)):
                     "id": t.id,
                     "name": t.name,
                     "updatedAt": t.updatedAt,
-                    "folder_name": t.folder.name if t.folder else "Unknown"
+                    "folderName": t.folder.name if t.folder else "Unknown"
                 }
                 for t in threads
             ]

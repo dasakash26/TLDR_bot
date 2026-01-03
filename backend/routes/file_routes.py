@@ -27,8 +27,8 @@ rate_limits = {
 }
 
 
-@router.post("/upload")
 @limiter.limit(rate_limits["upload_file"])
+@router.post("/upload")
 async def upload(
     request: Request,
     background_tasks: BackgroundTasks,
@@ -96,10 +96,12 @@ async def upload(
         process_doc, str(file_location), res.id, folder_id, original_filename
     )
     return {
-        "file_id": res.id,
+        "id": res.id,
         "filename": original_filename,
         "status": "PENDING",
-        "uploaded_at": res.createdAt,
+        "createdAt": res.createdAt,
+        "uploaderId": user_id,
+        "folderId": folder_id,
     }
 
 
@@ -107,6 +109,7 @@ async def upload(
 @limiter.limit(rate_limits["status_check"])
 @router.get("/status/{file_id}")
 async def file_status(request: Request, file_id: str, user=Depends(get_current_user)):
+    user_id = user.id
     if not file_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -122,18 +125,34 @@ async def file_status(request: Request, file_id: str, user=Depends(get_current_u
             detail="File not found",
         )
 
+    # Check if user has access to this file's folder
+    folder = await db.folder.find_first(
+        where={
+            "id": file_record.folder_id,
+            "users": {"some": {"id": user_id}},
+        }
+    )
+
+    if not folder:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied",
+        )
+
     return {
-        "file_id": file_record.id,
+        "id": file_record.id,
         "filename": file_record.filename,
         "status": file_record.status,
-        "uploaded_at": file_record.createdAt,
-        "processed_at": file_record.updatedAt,
+        "createdAt": file_record.createdAt,
+        "updatedAt": file_record.updatedAt,
+        "uploaderId": file_record.uploader_id,
+        "folderId": file_record.folder_id,
     }
 
 
 # Get File Details
-@router.get("/{file_id}")
 @limiter.limit(rate_limits["status_check"])
+@router.get("/{file_id}")
 async def get_file_details(
     request: Request,
     file_id: str,
@@ -173,12 +192,15 @@ async def get_file_details(
             "id": file_record.id,
             "filename": file_record.filename,
             "status": file_record.status,
-            "file_url": file_record.file_url,
-            "created_at": file_record.createdAt,
-            "updated_at": file_record.updatedAt,
-            "folder_name": file_record.folder.name,
-            "uploader_name": file_record.uploader.name or file_record.uploader.email,
-            "size": "Unknown", # Prisma schema doesn't have size yet, maybe add later
+            "fileUrl": file_record.file_url,
+            "createdAt": file_record.createdAt,
+            "updatedAt": file_record.updatedAt,
+            "folderName": file_record.folder.name,
+            "uploaderName": file_record.uploader.name or file_record.uploader.email,
+            "uploaderId": file_record.uploader_id,
+            "folderId": file_record.folder_id,
+            "fileSize": file_record.file_size,
+            "pageCount": file_record.page_count,
             "type": Path(file_record.filename).suffix,
         }
 
@@ -193,8 +215,8 @@ async def get_file_details(
 
 
 # Delete File
-@router.delete("/{file_id}")
 @limiter.limit(rate_limits["upload_file"])
+@router.delete("/{file_id}")
 async def delete_file(
     request: Request,
     file_id: str,

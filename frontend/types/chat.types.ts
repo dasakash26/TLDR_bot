@@ -16,31 +16,34 @@ export interface Message {
 export interface Thread {
   id: string;
   name: string;
-  folder_id: string;
+  folderId: string;
   messages?: Message[];
   createdAt: string;
   updatedAt: string;
 }
 
 export interface File {
-  file_id: string;
-  file_name: string;
-  uploaded_by: string;
-  // Extended details
-  status?: string;
-  file_url?: string | null;
-  created_at?: string;
-  updated_at?: string;
-  folder_name?: string;
-  uploader_name?: string;
-  size?: string;
+  id: string;
+  filename: string;
+  uploaderId: string;
+  folderId: string;
+  status: string;
+  fileUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  folderName?: string;
+  uploaderName?: string;
+  fileSize?: number;
+  pageCount?: number;
   type?: string;
 }
 
 export interface Folder {
-  folder_id: string;
+  id: string;
   name: string;
-  created_by: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
   files?: File[];
   threads?: Thread[];
 }
@@ -49,6 +52,8 @@ export interface CreateThreadData {
   folder_id: string;
   thread_name: string;
 }
+
+export interface CreateThreadResponse  { id: string; name: string; folderId: string; createdAt: string }
 
 export interface UpdateThreadData {
   thread_id: string;

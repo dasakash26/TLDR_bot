@@ -77,9 +77,9 @@ export function FileMetadataDialog({
                 <div className="space-y-1 overflow-hidden">
                   <h4
                     className="font-medium leading-none line-clamp-2 break-all"
-                    title={file.file_name}
+                    title={file.filename}
                   >
-                    {file.file_name}
+                    {file.filename}
                   </h4>
                   <p className="text-xs text-muted-foreground uppercase">
                     {file.type || "Unknown Type"}
@@ -121,7 +121,7 @@ export function FileMetadataDialog({
                     Folder
                   </div>
                   <p className="text-sm font-medium truncate">
-                    {file.folder_name}
+                    {file.folderName}
                   </p>
                 </div>
 
@@ -131,7 +131,7 @@ export function FileMetadataDialog({
                     Uploaded By
                   </div>
                   <p className="text-sm font-medium truncate">
-                    {file.uploaded_by}
+                    {file.uploaderName}
                   </p>
                 </div>
 
@@ -141,8 +141,8 @@ export function FileMetadataDialog({
                     Uploaded
                   </div>
                   <p className="text-sm font-medium">
-                    {file.created_at
-                      ? format(new Date(file.created_at), "PP p")
+                    {file.createdAt
+                      ? format(new Date(file.createdAt), "PP p")
                       : "N/A"}
                   </p>
                 </div>
@@ -153,8 +153,8 @@ export function FileMetadataDialog({
                     Size
                   </div>
                   <p className="text-sm font-medium">
-                    {file.size
-                      ? formatBytes(Number(file.size))
+                    {file.fileSize
+                      ? formatBytes(file.fileSize)
                       : citation?.file_size
                       ? formatBytes(citation.file_size)
                       : "Unknown"}
@@ -178,13 +178,13 @@ export function FileMetadataDialog({
               </div>
 
               {/* Additional details if available */}
-              {file.file_url && (
+              {file.fileUrl && (
                 <div className="pt-2">
                   <p className="text-xs text-muted-foreground mb-1">
                     Source URL
                   </p>
                   <div className="p-2 bg-muted rounded text-xs break-all font-mono">
-                    {file.file_url}
+                    {file.fileUrl}
                   </div>
                 </div>
               )}

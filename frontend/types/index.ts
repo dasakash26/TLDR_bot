@@ -11,6 +11,7 @@ import {
   File,
   Folder,
   CreateThreadData,
+  CreateThreadResponse,
   UpdateThreadData,
   ChatData,
 } from "./chat.types";
@@ -22,6 +23,7 @@ export type {
   File,
   Folder,
   CreateThreadData,
+  CreateThreadResponse,
   UpdateThreadData,
   ChatData,
 };

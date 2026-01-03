@@ -6,6 +6,9 @@ from routes.folder_routes import router as folder_routes
 from contextlib import asynccontextmanager
 from services.db_service import db
 from routes.thread_routes import router as thread_routes
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 
 @asynccontextmanager
@@ -15,7 +18,10 @@ async def lifespan(app: FastAPI):
     await db.disconnect()
 
 
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,

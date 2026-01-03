@@ -1,8 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { AuthBranding } from "@/components/auth/auth-branding";
-import { LoginForm } from "@/components/auth/login-form";
+import { AuthBranding, LoginForm } from "@/components/auth";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import Link from "next/link";
 

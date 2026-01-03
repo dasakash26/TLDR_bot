@@ -17,8 +17,8 @@ rate_limits = {
 
 
 # Create Folder
-@router.post("/")
 @limiter.limit(rate_limits["create_folder"])
+@router.post("/")
 async def create_folder(
     request: Request, folder_name: str, user=Depends(get_current_user)
 ):
@@ -31,7 +31,7 @@ async def create_folder(
                 "users": {"connect": {"id": user.id}},
             }
         )
-        return {"folder_id": res.id, "name": res.name, "created_by": res.created_by}
+        return {"id": res.id, "name": res.name, "createdBy": res.created_by, "createdAt": res.createdAt}
 
     except Exception as e:
         logging.error(f"Error creating folder for user {user_id}: {e}")
@@ -42,8 +42,8 @@ async def create_folder(
 
 
 # Get Folders
-@router.get("/")
 @limiter.limit(rate_limits["get_folders"])
+@router.get("/")
 async def get_folders(request: Request, user=Depends(get_current_user)):
     user_id = user.id
     try:
@@ -53,14 +53,18 @@ async def get_folders(request: Request, user=Depends(get_current_user)):
         )
         return [
             {
-                "folder_id": f.id,
+                "id": f.id,
                 "name": f.name,
-                "created_by": f.created_by,
+                "createdBy": f.created_by,
+                "createdAt": f.createdAt,
+                "updatedAt": f.updatedAt,
                 "files": [
                     {
-                        "file_id": file.id,
-                        "file_name": file.filename,
-                        "uploaded_by": file.uploader_id,
+                        "id": file.id,
+                        "filename": file.filename,
+                        "uploaderId": file.uploader_id,
+                        "status": file.status,
+                        "createdAt": file.createdAt,
                     }
                     for file in f.files
                 ],
@@ -69,6 +73,7 @@ async def get_folders(request: Request, user=Depends(get_current_user)):
                         "id": thread.id,
                         "name": thread.name,
                         "createdAt": thread.createdAt,
+                        "updatedAt": thread.updatedAt,
                     }
                     for thread in f.threads
                 ],
@@ -84,9 +89,71 @@ async def get_folders(request: Request, user=Depends(get_current_user)):
         )
 
 
+# Get Single Folder
+@limiter.limit(rate_limits["get_folders"])
+@router.get("/{folder_id}")
+async def get_folder(
+    request: Request,
+    folder_id: Annotated[str, Path(title="Folder ID")],
+    user=Depends(get_current_user),
+):
+    user_id = user.id
+    try:
+        folder = await db.folder.find_unique(
+            where={"id": folder_id},
+            include={"files": True, "threads": True, "users": True},
+        )
+        if not folder:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found"
+            )
+
+        if not any(u.id == user_id for u in folder.users):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have access to this folder",
+            )
+
+        return {
+            "id": folder.id,
+            "name": folder.name,
+            "createdBy": folder.created_by,
+            "createdAt": folder.createdAt,
+            "updatedAt": folder.updatedAt,
+            "files": [
+                {
+                    "id": file.id,
+                    "filename": file.filename,
+                    "uploaderId": file.uploader_id,
+                    "status": file.status,
+                    "createdAt": file.createdAt,
+                }
+                for file in folder.files
+            ],
+            "threads": [
+                {
+                    "id": thread.id,
+                    "name": thread.name,
+                    "createdAt": thread.createdAt,
+                    "updatedAt": thread.updatedAt,
+                }
+                for thread in folder.threads
+            ],
+        }
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logging.error(f"Error retrieving folder {folder_id} by user {user_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
+
+
 # Add User
-@router.post("/{folder_id}/add_user")
 @limiter.limit(rate_limits["add_user"])
+@router.post("/{folder_id}/add_user")
 async def add_user(
     request: Request,
     folder_id: Annotated[str, Path(title="Folder ID")],
@@ -130,8 +197,8 @@ async def add_user(
 
 
 # delete folder
-@router.delete("/{folder_id}")
 @limiter.limit(rate_limits["get_folders"])
+@router.delete("/{folder_id}")
 async def delete_folder(
     request: Request,
     folder_id: Annotated[str, Path(title="Folder ID")],
@@ -166,8 +233,8 @@ async def delete_folder(
 
 
 # Get files
-@router.get("/{folder_id}/files")
 @limiter.limit(rate_limits["get_folders"])
+@router.get("/{folder_id}/files")
 async def get_files(
     request: Request,
     folder_id: Annotated[str, Path(title="Folder ID")],
@@ -193,7 +260,7 @@ async def get_files(
             )
 
         return [
-            {"file_id": f.id, "file_name": f.filename, "uploaded_by": f.uploader_id}
+            {"id": f.id, "filename": f.filename, "uploaderId": f.uploader_id, "status": f.status, "createdAt": f.createdAt}
             for f in folder.files
         ]
 
@@ -210,8 +277,8 @@ async def get_files(
 
 
 # Update Folder
-@router.put("/{folder_id}")
 @limiter.limit(rate_limits["create_folder"])
+@router.put("/{folder_id}")
 async def update_folder(
     request: Request,
     folder_id: Annotated[str, Path(title="Folder ID")],
@@ -236,7 +303,7 @@ async def update_folder(
             where={"id": folder_id}, data={"name": data.new_name}
         )
 
-        return {"folder_id": updated_folder.id, "name": updated_folder.name}
+        return {"id": updated_folder.id, "name": updated_folder.name, "createdBy": updated_folder.created_by, "updatedAt": updated_folder.updatedAt}
 
     except HTTPException as he:
         raise he

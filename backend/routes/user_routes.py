@@ -23,8 +23,8 @@ logging.basicConfig(
 )
 
 
-@router.post("/register")
 @limiter.limit("5/minute")
+@router.post("/register")
 async def register(request: Request, data: registerReq):
     # existing user check
     existing_user = await db.user.find_unique(where={"email": data.email})
@@ -78,8 +78,8 @@ async def register(request: Request, data: registerReq):
     return {"message": "register successful. Please verify your email."}
 
 
-@router.post("/verify")
 @limiter.limit("5/minute")
+@router.post("/verify")
 async def verify(request: Request, data: VerificationReq):
     user = await db.user.find_unique(where={"email": data.email})
 
@@ -109,8 +109,8 @@ async def verify(request: Request, data: VerificationReq):
     return {"message": "Email verified successfully."}
 
 
-@router.post("/login")
 @limiter.limit("10/minute")
+@router.post("/login")
 async def login(request: Request, data: LoginReq, res: Response):
     user = await db.user.find_first(where={"email": data.email})
     if not user:
@@ -144,8 +144,8 @@ async def login(request: Request, data: LoginReq, res: Response):
     return {"message": "Login successful."}
 
 
-@router.get("/me")
 @limiter.limit("20/minute")
+@router.get("/me")
 async def me(request: Request, current_user=Depends(get_current_user)):
     # remove sensitive info
     user_data = {
@@ -160,8 +160,8 @@ async def me(request: Request, current_user=Depends(get_current_user)):
     return user_data
 
 
-@router.post("/logout")
 @limiter.limit("10/minute")
+@router.post("/logout")
 async def logout(
     request: Request, res: Response, current_user=Depends(get_current_user)
 ):
@@ -169,8 +169,8 @@ async def logout(
     return {"message": "Logout successful."}
 
 
-@router.post("/resend-otp")
 @limiter.limit("3/minute")
+@router.post("/resend-otp")
 async def resend_otp(request: Request, data: ResendOtpReq):
     user = await db.user.find_unique(where={"email": data.email})
     if not user:

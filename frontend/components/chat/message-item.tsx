@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Share, MoreHorizontal, FileText } from "lucide-react";
+import { Copy, FileText } from "lucide-react";
 import { cn, formatBytes } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -10,6 +10,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useState } from "react";
 import { FileMetadataDialog } from "./file-metadata-dialog";
+import { toast } from "sonner";
 
 export function MessageItem({
   message,
@@ -152,24 +153,24 @@ export function MessageItem({
         )}
 
         {/* Message Actions (Hidden by default, shown on hover) */}
-        {!isUser && (
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity px-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 text-muted-foreground hover:text-foreground"
-            >
-              <Share className="w-3 h-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 text-muted-foreground hover:text-foreground"
-            >
-              <MoreHorizontal className="w-3 h-3" />
-            </Button>
-          </div>
-        )}
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity px-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(message.content);
+                toast.success("Message copied");
+              } catch (error) {
+                toast.error("Failed to copy");
+              }
+            }}
+            title="Copy message"
+          >
+            <Copy className="w-3 h-3" />
+          </Button>
+        </div>
       </div>
 
       {isUser && (

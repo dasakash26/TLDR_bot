@@ -11,6 +11,24 @@ import {
   FileText,
 } from "lucide-react";
 import { motion } from "framer-motion";
+const Features = [
+  {
+    icon: FolderGit2,
+    title: "Context Isolation",
+    description: "Stop mixing research. Group data into high-density project silos for zero-noise retrieval."
+  },
+  {
+    icon: Users,
+    title: "Collective Brain",
+    description: "Sync your team's knowledge instantly. One workspace that serves as your team's shared source of truth."
+  },
+  {
+    icon: FileText,
+    title: "Audit-Ready AI",
+    description: "End hallucinations. Every answer is backed by a direct link to the exact sentence in your source."
+  }
+];
+
 
 export default function Home() {
   return (
@@ -26,15 +44,6 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-2">
             <ModeToggle />
-            <Link href="/login">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="font-medium text-muted-foreground hover:text-foreground rounded-full px-4"
-              >
-                Log In
-              </Button>
-            </Link>
             <Link href="/chat">
               <Button
                 size="sm"
@@ -45,15 +54,15 @@ export default function Home() {
             </Link>
           </div>
         </nav>
-      </div>
+      </div >
 
       {/* Hero Section */}
-      <main className="relative flex-1 flex flex-col items-center justify-center px-6">
+      < main className="relative flex-1 flex flex-col items-center justify-center px-6" >
         {/* Sleek Background Elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        < div className="absolute inset-0 overflow-hidden pointer-events-none" >
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-primary/5 blur-[120px] rounded-full opacity-50" />
           <div className="absolute bottom-0 right-0 w-[800px] h-[800px] bg-accent/5 blur-[100px] rounded-full opacity-30" />
-        </div>
+        </div >
 
         <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col h-full justify-center pt-20">
           <motion.div
@@ -68,7 +77,7 @@ export default function Home() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
               </span>
               <span className="text-xs font-medium text-muted-foreground">
-                Now with real-time collaboration
+                Now live: Team Workspaces!
               </span>
             </div>
 
@@ -91,7 +100,7 @@ export default function Home() {
                   size="lg"
                   className="w-full sm:w-auto h-12 px-8 text-base font-semibold rounded-full shadow-xl shadow-primary/20 hover:shadow-primary/30 transition-all hover:-translate-y-1"
                 >
-                  Start analyzing for free
+                  Start Your Recap Journey
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </Link>
@@ -102,28 +111,21 @@ export default function Home() {
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
             className="grid md:grid-cols-3 gap-4 text-left pb-12 w-full"
           >
-            <FeatureCard
-              icon={<FolderGit2 className="w-5 h-5 text-primary" />}
-              title="Smart Workspaces"
-              description="Create dedicated folders for projects. Upload PDFs, docs, and text files."
-            />
-            <FeatureCard
-              icon={<Users className="w-5 h-5 text-primary" />}
-              title="Team Collaboration"
-              description="Invite colleagues to your folders. Share insights and work together."
-            />
-            <FeatureCard
-              icon={<FileText className="w-5 h-5 text-primary" />}
-              title="Precision Citations"
-              description="Trust but verify. Every AI response includes direct links to sources."
-            />
+            {Features.map((feature, index) => (
+              <FeatureCard
+                key={index}
+                icon={<feature.icon className="w-6 h-6 text-primary" />}
+                title={feature.title}
+                description={feature.description}
+              />
+            ))}
           </motion.div>
         </div>
-      </main>
-    </div>
+      </main >
+    </div >
   );
 }
 
@@ -146,7 +148,7 @@ function FeatureCard({
           {title}
         </h3>
       </div>
-      <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+      <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
         {description}
       </p>
     </div>

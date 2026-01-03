@@ -16,6 +16,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  icons: {
+    icon: "/main.jpg",
+    shortcut: "/main.jpg",
+    apple: "/main.jpg",
+    other: {
+      rel: "apple-touch-icon-precomposed",
+      url: "main.jpg",
+    },
+  },
   title: "Recap - AI-Powered Document Assistant",
   description:
     "Chat with your documents, organize knowledge, and get instant summaries with Recap. Your personal AI research assistant.",
