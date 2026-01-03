@@ -124,7 +124,6 @@ export function useLogin(onError?: (error: Error) => void) {
       return res.json();
     },
     onSuccess: (data) => {
-      // Store user data if returned from API
       if (data.user) {
         setUser(data.user as User);
       }
