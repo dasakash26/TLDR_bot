@@ -75,7 +75,7 @@ export function LoginForm() {
           <div>
             <div className="mb-8">
               <h2 className="text-3xl font-bold tracking-tight mb-2 text-foreground">
-                Sign in
+              Log In
               </h2>
               <p className="text-muted-foreground">
                 Enter your credentials to access your account

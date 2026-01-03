@@ -2,7 +2,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { fetchClient } from "@/lib/api";
-import { Thread, CreateThreadResponse, CreateThreadData, UpdateThreadData } from "@/types";
+import {
+  Thread,
+  CreateThreadResponse,
+  CreateThreadData,
+  UpdateThreadData,
+} from "@/types";
 import { createMutation } from "./use-mutation-factory";
 
 // --- Thread Queries ---
@@ -50,7 +55,7 @@ export function useRecentThreads() {
 // --- Thread Mutations ---
 
 export const useCreateThread = createMutation<
-CreateThreadResponse,
+  CreateThreadResponse,
   CreateThreadData
 >({
   mutationFn: async (data: CreateThreadData) => {
@@ -78,7 +83,10 @@ CreateThreadResponse,
   },
 });
 
-export const useUpdateThread = createMutation<any,UpdateThreadData>({
+export const useUpdateThread = createMutation<
+  { id: string; name: string; folderId: string; updatedAt: string },
+  UpdateThreadData
+>({
   mutationFn: async (data: UpdateThreadData) => {
     const res = await fetchClient(`/thread/${data.thread_id}`, {
       method: "PUT",
@@ -91,10 +99,15 @@ export const useUpdateThread = createMutation<any,UpdateThreadData>({
   successMessage: "Thread updated successfully",
   errorMessage: "Failed to update thread",
   onSuccessCallback: (data, variables, queryClient) => {
-    // Also invalidate the specific thread query
     queryClient.invalidateQueries({
       queryKey: ["thread", variables.thread_id],
     });
+
+    if (data.folderId) {
+      queryClient.invalidateQueries({
+        queryKey: ["folder", data.folderId, "threads"],
+      });
+    }
   },
 });
 

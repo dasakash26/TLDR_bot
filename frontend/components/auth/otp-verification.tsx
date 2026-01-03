@@ -49,7 +49,7 @@ export function OTPVerification({
           {isLoading
             ? "Verifying..."
             : isLogin
-            ? "Verify & Sign In"
+            ? "Verify & Log In"
             : "Verify & Create Account"}
         </Button>
 

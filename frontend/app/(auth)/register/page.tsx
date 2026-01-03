@@ -25,7 +25,8 @@ export default function RegisterPage() {
 
   const isLoading = isRegistering || isVerifying;
 
-  const handleRegisterSubmit = () => {
+  const handleRegisterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     register(formData);
   };
 

@@ -124,10 +124,10 @@ export function RegisterForm({
       <p className="mt-8 text-center text-sm text-muted-foreground">
         Already have an account?{" "}
         <Link
-          href="/auth/login"
+          href="/login"
           className="font-medium text-foreground hover:underline"
         >
-          Sign in
+          Log in
         </Link>
       </p>
     </div>

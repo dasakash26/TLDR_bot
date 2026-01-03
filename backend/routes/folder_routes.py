@@ -49,7 +49,11 @@ async def get_folders(request: Request, user=Depends(get_current_user)):
     try:
         folders = await db.folder.find_many(
             where={"users": {"some": {"id": user_id}}},
-            include={"files": True, "threads": True},
+            include={
+                "files": {"order_by": {"updatedAt": "desc"}},
+                "threads": {"order_by": {"updatedAt": "desc"}},
+            },
+            order={"updatedAt": "desc"},
         )
         return [
             {
@@ -101,7 +105,11 @@ async def get_folder(
     try:
         folder = await db.folder.find_unique(
             where={"id": folder_id},
-            include={"files": True, "threads": True, "users": True},
+            include={
+                "files": {"order_by": {"updatedAt": "desc"}},
+                "threads": {"order_by": {"updatedAt": "desc"}},
+                "users": True,
+            },
         )
         if not folder:
             raise HTTPException(
@@ -243,7 +251,11 @@ async def get_files(
     user_id = user.id
     try:
         folder = await db.folder.find_unique(
-            where={"id": folder_id}, include={"files": True, "users": True}
+            where={"id": folder_id},
+            include={
+                "files": {"order_by": {"updatedAt": "desc"}},
+                "users": True,
+            },
         )
         if not folder:
             raise HTTPException(
