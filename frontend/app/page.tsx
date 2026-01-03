@@ -11,6 +11,8 @@ import {
   FileText,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { Analytics } from "@vercel/analytics/next"
+
 const Features = [
   {
     icon: FolderGit2,
@@ -124,6 +126,7 @@ export default function Home() {
             ))}
           </motion.div>
         </div>
+        <Analytics />
       </main >
     </div >
   );
