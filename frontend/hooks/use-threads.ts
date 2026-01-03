@@ -10,8 +10,6 @@ import {
 } from "@/types";
 import { createMutation } from "./use-mutation-factory";
 
-// --- Thread Queries ---
-
 export function useThread(threadId: string) {
   return useQuery({
     queryKey: ["thread", threadId],
@@ -52,8 +50,6 @@ export function useRecentThreads() {
   });
 }
 
-// --- Thread Mutations ---
-
 export const useCreateThread = createMutation<
   CreateThreadResponse,
   CreateThreadData
@@ -73,7 +69,6 @@ export const useCreateThread = createMutation<
   successMessage: "Thread created successfully",
   errorMessage: "Failed to create thread",
   onSuccessCallback: (data, variables, queryClient) => {
-    // Also invalidate the specific folder and its threads
     queryClient.invalidateQueries({
       queryKey: ["folder", variables.folder_id],
     });

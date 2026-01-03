@@ -40,6 +40,21 @@ export function ChatSidebar() {
 
   const router = useRouter();
 
+  //take threadId from url and set expanded folder to thread's folderId
+  useEffect(() => {
+    const folderId = folders?.find((folder) =>
+      folder.threads?.some((t) => t.id === threadId)
+    )?.id;
+
+    if (threadId && folderId) {
+      setExpandedFolder(folderId);
+    } else {
+      setExpandedFolder(null);
+      console.log("No threadId or folderId found in URL");
+    }
+
+  }, [threadId, thread?.folderId, setExpandedFolder, folders]);
+
   useEffect(() => {
     if (threadId && thread?.folderId) {
       setExpandedFolder(thread.folderId);
