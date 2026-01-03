@@ -9,6 +9,7 @@ import {
   Trash2,
   Pencil,
   Upload,
+  Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarMenuButton } from "@/components/ui/sidebar";
@@ -29,6 +30,7 @@ interface FolderHeaderProps {
   onUploadFile: () => void;
   onRenameFolder: () => void;
   onDeleteFolder: () => void;
+  onShareFolder?: () => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
@@ -41,6 +43,7 @@ export function FolderHeader({
   onUploadFile,
   onRenameFolder,
   onDeleteFolder,
+  onShareFolder,
   fileInputRef,
   onFileChange,
 }: FolderHeaderProps) {
@@ -84,6 +87,12 @@ export function FolderHeader({
             Upload File
           </DropdownMenuItem>
           <DropdownMenuSeparator />
+          {onShareFolder && (
+            <DropdownMenuItem onClick={onShareFolder}>
+              <Share2 className="mr-2 h-4 w-4" />
+              Share Folder
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem onClick={onRenameFolder}>
             <Pencil className="mr-2 h-4 w-4" />
             Rename Folder

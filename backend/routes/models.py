@@ -39,3 +39,11 @@ class UpdateThreadReq(BaseModel):
 
 class UpdateFolderReq(BaseModel):
     new_name: str
+
+
+class ShareFolderReq(BaseModel):
+    user_email: EmailStr
+
+
+class RemoveUserReq(BaseModel):
+    user_email: EmailStr

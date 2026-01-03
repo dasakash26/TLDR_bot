@@ -10,6 +10,7 @@ import {
 } from "@/types";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useUserStore, User } from "./use-user";
 
 async function getErrorMessage(res: Response) {
   try {
@@ -52,6 +53,8 @@ export function useRegister(onSuccess?: () => void) {
 
 export function useVerifyOTP() {
   const router = useRouter();
+  const { setUser } = useUserStore();
+
   return useMutation({
     mutationFn: async (data: OtpVerifyData) => {
       const res = await fetchClient("/user/verify", {
@@ -65,7 +68,11 @@ export function useVerifyOTP() {
 
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Store user data if returned from API
+      if (data.user) {
+        setUser(data.user as User);
+      }
       toast.success("OTP verified successfully!");
       router.push("/chat");
       router.refresh();
@@ -74,7 +81,7 @@ export function useVerifyOTP() {
       toast.error(error.message || "Verification failed");
     },
   });
-};
+}
 
 export const useResendOTP = () => {
   return useMutation({
@@ -101,6 +108,8 @@ export const useResendOTP = () => {
 
 export function useLogin(onError?: (error: Error) => void) {
   const router = useRouter();
+  const { setUser } = useUserStore();
+
   return useMutation({
     mutationFn: async (data: LoginData) => {
       const res = await fetchClient("/user/login", {
@@ -114,7 +123,11 @@ export function useLogin(onError?: (error: Error) => void) {
 
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Store user data if returned from API
+      if (data.user) {
+        setUser(data.user as User);
+      }
       toast.success("Logged in successfully!");
       router.push("/chat");
       router.refresh();
@@ -124,10 +137,12 @@ export function useLogin(onError?: (error: Error) => void) {
       onError?.(error);
     },
   });
-};
+}
 
 export function useLogout() {
   const router = useRouter();
+  const { clearUser } = useUserStore();
+
   return useMutation({
     mutationFn: async () => {
       const res = await fetchClient("/user/logout", {
@@ -140,6 +155,7 @@ export function useLogout() {
       return res.json();
     },
     onSuccess: () => {
+      clearUser();
       toast.success("Logged out successfully!");
       router.push("/");
       router.refresh();
@@ -149,5 +165,3 @@ export function useLogout() {
     },
   });
 }
-
-

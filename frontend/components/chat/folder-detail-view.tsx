@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   useFolderFiles,
@@ -7,6 +8,7 @@ import {
   useFolder,
   Thread,
 } from "@/hooks/use-chat";
+import { useFolderCollaborators } from "@/hooks/use-folder-sharing";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ModeToggle } from "@/components/ui/mode-toggle";
@@ -17,12 +19,16 @@ import {
   MoreHorizontal,
   Calendar,
   User,
+  Users,
+  Crown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useFileSelection } from "@/hooks/use-file-selection";
 import { FileMetadataDialog } from ".";
 import { formatDistanceToNow } from "date-fns";
+import { ShareDialog } from "@/components/share";
+import { useUser } from "@/hooks/use-user";
 
 export function FolderDetailView() {
   const searchParams = useSearchParams();
@@ -30,6 +36,8 @@ export function FolderDetailView() {
   const router = useRouter();
   const { openFileView, selectedFileId, isFileViewOpen, closeFileView } =
     useFileSelection();
+  const { data: user } = useUser();
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   const { data: folder, isLoading: isFolderLoading } = useFolder(
     folderId || ""
@@ -40,6 +48,8 @@ export function FolderDetailView() {
   const { data: threads, isLoading: isLoadingThreads } = useFolderThreads(
     folderId || ""
   );
+  const { data: collaborators = [], isLoading: isLoadingCollaborators } =
+    useFolderCollaborators(folderId || "");
 
   if (!folderId) {
     return (
@@ -116,7 +126,7 @@ export function FolderDetailView() {
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-5xl mx-auto px-8 py-8">
           {/* Folder Stats */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-4 gap-4 mb-8">
             <div className="p-4 rounded-lg border border-border bg-card">
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
                 <MessageSquare className="w-4 h-4" />
@@ -137,6 +147,15 @@ export function FolderDetailView() {
             </div>
             <div className="p-4 rounded-lg border border-border bg-card">
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <Users className="w-4 h-4" />
+                <span className="text-xs font-medium uppercase tracking-wider">
+                  Collaborators
+                </span>
+              </div>
+              <p className="text-2xl font-bold">{collaborators?.length || 0}</p>
+            </div>
+            <div className="p-4 rounded-lg border border-border bg-card">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
                 <Calendar className="w-4 h-4" />
                 <span className="text-xs font-medium uppercase tracking-wider">
                   Created
@@ -151,6 +170,69 @@ export function FolderDetailView() {
               </p>
             </div>
           </div>
+
+          {/* Collaborators Section */}
+          <section className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Users className="w-5 h-5 text-primary" />
+                Collaborators
+              </h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShareDialogOpen(true)}
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Share Folder
+              </Button>
+            </div>
+            {isLoadingCollaborators ? (
+              <div className="space-y-2">
+                {[1, 2].map((i) => (
+                  <Skeleton key={i} className="h-16 w-full rounded-lg" />
+                ))}
+              </div>
+            ) : collaborators && collaborators.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3">
+                {collaborators.map((collaborator) => (
+                  <div
+                    key={collaborator.id}
+                    className="p-4 rounded-lg border border-border bg-card"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                        {collaborator.name?.[0]?.toUpperCase() ||
+                          collaborator.email[0].toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium text-sm truncate">
+                            {collaborator.name || "Unknown"}
+                          </h3>
+                          {collaborator.isOwner && (
+                            <Crown className="w-3 h-3 text-yellow-500 shrink-0" />
+                          )}
+                          {collaborator.id === user?.id && (
+                            <span className="text-xs text-muted-foreground">
+                              (You)
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {collaborator.email}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 rounded-lg border border-dashed border-border text-center text-muted-foreground">
+                No collaborators yet. Share this folder to collaborate.
+              </div>
+            )}
+          </section>
 
           {/* Threads Section */}
           <section className="mb-8">
@@ -254,6 +336,16 @@ export function FolderDetailView() {
         open={isFileViewOpen}
         onOpenChange={closeFileView}
       />
+
+      {/* Share Dialog */}
+      {folder && (
+        <ShareDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          folderId={folder.id}
+          folderName={folder.name}
+        />
+      )}
     </div>
   );
 }

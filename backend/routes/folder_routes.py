@@ -159,6 +159,51 @@ async def get_folder(
         )
 
 
+# Get Folder Collaborators
+@limiter.limit(rate_limits["get_folders"])
+@router.get("/{folder_id}/collaborators")
+async def get_folder_collaborators(
+    request: Request,
+    folder_id: Annotated[str, Path(title="Folder ID")],
+    user=Depends(get_current_user),
+):
+    user_id = user.id
+    try:
+        folder = await db.folder.find_unique(
+            where={"id": folder_id},
+            include={"users": True},
+        )
+        if not folder:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found"
+            )
+
+        if not any(u.id == user_id for u in folder.users):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have access to this folder",
+            )
+
+        return [
+            {
+                "id": u.id,
+                "name": u.name,
+                "email": u.email,
+                "isOwner": u.id == folder.created_by,
+            }
+            for u in folder.users
+        ]
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logging.error(f"Error retrieving collaborators for folder {folder_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
+
+
 # Add User
 @limiter.limit(rate_limits["add_user"])
 @router.post("/{folder_id}/add_user")
@@ -198,6 +243,71 @@ async def add_user(
         raise he
     except Exception as e:
         logging.error(f"Error adding user to folder {folder_id} by user {user_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
+
+
+# Remove User
+@limiter.limit(rate_limits["add_user"])
+@router.post("/{folder_id}/remove_user")
+async def remove_user(
+    request: Request,
+    folder_id: Annotated[str, Path(title="Folder ID")],
+    user_email: str,
+    user=Depends(get_current_user),
+):
+    user_id = user.id
+    try:
+        folder = await db.folder.find_unique(
+            where={"id": folder_id},
+            include={"users": True},
+        )
+        if not folder:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found"
+            )
+
+        if folder.created_by != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only the folder creator can remove users",
+            )
+
+        user_to_remove = await db.user.find_unique(where={"email": user_email})
+        if not user_to_remove:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            )
+
+        # Prevent owner from removing themselves
+        if user_to_remove.id == folder.created_by:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot remove folder owner",
+            )
+
+        # Check if user is actually in the folder
+        if not any(u.id == user_to_remove.id for u in folder.users):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User is not a collaborator in this folder",
+            )
+
+        await db.folder.update(
+            where={"id": folder_id},
+            data={"users": {"disconnect": [{"id": user_to_remove.id}]}},
+        )
+
+        return {"message": f"User {user_email} removed from folder {folder_id}"}
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logging.error(
+            f"Error removing user from folder {folder_id} by user {user_id}: {e}"
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",

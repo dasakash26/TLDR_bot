@@ -185,3 +185,41 @@ async def resend_otp(request: Request, data: ResendOtpReq):
     await db.user.update(where={"email": data.email}, data={"otp": hashed_otp})
     logging.info(f"OTP for {data.email} is {plain_otp}")
     return {"message": "OTP resent successfully"}
+
+
+@limiter.limit("20/minute")
+@router.get("/search")
+async def search_users(
+    request: Request, query: str, current_user=Depends(get_current_user)
+):
+    """Search for users by email or name"""
+    if not query or len(query) < 2:
+        return []
+
+    try:
+        users = await db.user.find_many(
+            where={
+                "AND": [
+                    {"is_verified": True},
+                    {
+                        "OR": [
+                            {"email": {"contains": query, "mode": "insensitive"}},
+                            {"name": {"contains": query, "mode": "insensitive"}},
+                        ]
+                    },
+                ]
+            },
+            take=10,
+        )
+
+        return [
+            {"id": u.id, "name": u.name, "email": u.email}
+            for u in users
+            if u.id != current_user.id
+        ]
+    except Exception as e:
+        logging.error(f"Error searching users: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )

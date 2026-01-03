@@ -7,8 +7,7 @@ export default function AuthPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect to login page by default
-    router.push("/auth/login");
+    router.push("/login");
   }, [router]);
 
   return null;

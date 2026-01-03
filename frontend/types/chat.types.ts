@@ -48,12 +48,30 @@ export interface Folder {
   threads?: Thread[];
 }
 
+export interface FolderCollaborator {
+  id: string;
+  name: string | null;
+  email: string;
+  isOwner: boolean;
+}
+
+export interface UserSearchResult {
+  id: string;
+  name: string | null;
+  email: string;
+}
+
 export interface CreateThreadData {
   folder_id: string;
   thread_name: string;
 }
 
-export interface CreateThreadResponse  { id: string; name: string; folderId: string; createdAt: string }
+export interface CreateThreadResponse {
+  id: string;
+  name: string;
+  folderId: string;
+  createdAt: string;
+}
 
 export interface UpdateThreadData {
   thread_id: string;

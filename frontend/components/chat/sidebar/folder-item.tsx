@@ -21,6 +21,7 @@ import { FilesSection } from "./files-section";
 import { ThreadsSection } from "./threads-section";
 import { RenameDialog, DeleteAlert } from "./generic-dialogs";
 import { useFileSelection } from "@/hooks/use-file-selection";
+import { ShareDialog } from "@/components/share";
 
 interface FolderItemProps {
   folder: Folder;
@@ -46,6 +47,7 @@ export function FolderItem({ folder, isExpanded, onToggle }: FolderItemProps) {
   // Dialog States
   const [renameFolderOpen, setRenameFolderOpen] = useState(false);
   const [deleteFolderOpen, setDeleteFolderOpen] = useState(false);
+  const [shareFolderOpen, setShareFolderOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState(folder.name);
 
   const [threadToRename, setThreadToRename] = useState<Thread | null>(null);
@@ -78,6 +80,11 @@ export function FolderItem({ folder, isExpanded, onToggle }: FolderItemProps) {
       updateFolder({ folderId: folder.id, newName: newFolderName });
     }
     setRenameFolderOpen(false);
+  };
+
+  const handleShareFolder = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setShareFolderOpen(true);
   };
 
   const handleRenameThread = () => {
@@ -144,6 +151,7 @@ export function FolderItem({ folder, isExpanded, onToggle }: FolderItemProps) {
             setRenameFolderOpen(true);
           }}
           onDeleteFolder={() => setDeleteFolderOpen(true)}
+          onShareFolder={handleShareFolder}
           fileInputRef={fileInputRef}
           onFileChange={handleFileUpload}
         />
@@ -226,6 +234,13 @@ export function FolderItem({ folder, isExpanded, onToggle }: FolderItemProps) {
         description={`This will permanently delete the file "${fileToDelete?.filename}".`}
         onOpenChange={(open) => !open && setFileToDelete(null)}
         onDelete={handleDeleteFile}
+      />
+
+      <ShareDialog
+        open={shareFolderOpen}
+        onOpenChange={setShareFolderOpen}
+        folderId={folder.id}
+        folderName={folder.name}
       />
     </>
   );
