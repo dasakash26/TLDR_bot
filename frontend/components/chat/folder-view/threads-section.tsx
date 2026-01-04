@@ -1,9 +1,15 @@
 "use client";
 
-import { MessageSquare } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { formatDistanceToNow } from "date-fns";
+import { useState } from "react";
 import { Thread } from "@/types";
+import { useUpdateThread, useDeleteThread } from "@/hooks/use-chat";
+import {
+  RenameDialog,
+  DeleteAlert,
+} from "@/components/chat/sidebar/generic-dialogs";
+import { ThreadCard } from "./thread-card";
+import { ThreadListSkeleton } from "./thread-list-skeleton";
+import { EmptyThreadsState } from "./empty-threads-state";
 
 interface ThreadsSectionProps {
   threads: Thread[];
@@ -16,73 +22,83 @@ export function ThreadsSection({
   isLoading,
   onThreadClick,
 }: ThreadsSectionProps) {
+  const { mutate: updateThread } = useUpdateThread();
+  const { mutate: deleteThread } = useDeleteThread();
+
+  const [threadToRename, setThreadToRename] = useState<Thread | null>(null);
+  const [newThreadName, setNewThreadName] = useState("");
+  const [threadToDelete, setThreadToDelete] = useState<Thread | null>(null);
+
+  const handleRenameThread = () => {
+    if (
+      threadToRename &&
+      newThreadName &&
+      newThreadName !== threadToRename.name
+    ) {
+      updateThread({
+        thread_id: threadToRename.id,
+        new_name: newThreadName,
+      });
+    }
+    setThreadToRename(null);
+  };
+
+  const handleDeleteThread = () => {
+    if (threadToDelete) {
+      deleteThread(threadToDelete.id);
+    }
+    setThreadToDelete(null);
+  };
+
+  const handleRenameThreadOpen = (thread: Thread) => {
+    setNewThreadName(thread.name);
+    setThreadToRename(thread);
+  };
+
   return (
-    <section className="mb-8 ">
-      <h6 className="text-lg font-semibold mb-4 flex items-center gap-2 opacity-80">
-        Chat Threads
-      </h6>
+    <>
+      <section className="mb-8 ">
+        <h6 className="text-lg font-semibold mb-4 flex items-center gap-2 opacity-80">
+          Chat Threads
+        </h6>
 
-      {isLoading ? (
-        <div className="space-y-2">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-16 w-full rounded-lg" />
-          ))}
-        </div>
-      ) : threads.length > 0 ? (
-        <div className="space-y-2">
-          {threads.map((thread) => (
-            <ThreadCard
-              key={thread.id}
-              thread={thread}
-              onClick={() => onThreadClick(thread.id)}
-            />
-          ))}
-        </div>
-      ) : (
-        <EmptyState message="No threads yet. Create one to start chatting." />
-      )}
-    </section>
-  );
-}
-
-interface ThreadCardProps {
-  thread: Thread;
-  onClick: () => void;
-}
-
-function ThreadCard({ thread, onClick }: ThreadCardProps) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-full p-4 py-2 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-left group"
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-            <MessageSquare className="w-5 h-5 text-primary" />
+        {isLoading ? (
+          <ThreadListSkeleton />
+        ) : threads.length > 0 ? (
+          <div className="space-y-2">
+            {threads.map((thread) => (
+              <ThreadCard
+                key={thread.id}
+                thread={thread}
+                onClick={() => onThreadClick(thread.id)}
+                onRename={() => handleRenameThreadOpen(thread)}
+                onDelete={() => setThreadToDelete(thread)}
+              />
+            ))}
           </div>
-          <div>
-            <h3 className="font-medium text-sm">{thread.name}</h3>
-            <p className="text-xs text-muted-foreground">
-              Updated{" "}
-              {formatDistanceToNow(new Date(thread.updatedAt), {
-                addSuffix: true,
-              })}
-            </p>
-          </div>
-        </div>
-        <div className="text-xs text-muted-foreground">
-          {thread.messages?.length || 0} messages
-        </div>
-      </div>
-    </button>
-  );
-}
+        ) : (
+          <EmptyThreadsState />
+        )}
+      </section>
 
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="p-8 rounded-lg border border-dashed border-border text-center text-muted-foreground">
-      {message}
-    </div>
+      <RenameDialog
+        open={!!threadToRename}
+        title="Rename Chat"
+        inputLabel="Name"
+        inputId="thread-name"
+        value={newThreadName}
+        onValueChange={setNewThreadName}
+        onOpenChange={(open) => !open && setThreadToRename(null)}
+        onSave={handleRenameThread}
+      />
+
+      <DeleteAlert
+        open={!!threadToDelete}
+        title="Delete Chat?"
+        description={`This will permanently delete the chat "${threadToDelete?.name}".`}
+        onOpenChange={(open) => !open && setThreadToDelete(null)}
+        onDelete={handleDeleteThread}
+      />
+    </>
   );
 }
