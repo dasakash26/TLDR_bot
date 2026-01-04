@@ -17,11 +17,10 @@ export function ThreadsSection({
   onThreadClick,
 }: ThreadsSectionProps) {
   return (
-    <section className="mb-8">
-      <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-        <MessageSquare className="w-5 h-5 text-primary" />
+    <section className="mb-8 ">
+      <h6 className="text-lg font-semibold mb-4 flex items-center gap-2 opacity-80">
         Chat Threads
-      </h2>
+      </h6>
 
       {isLoading ? (
         <div className="space-y-2">
@@ -55,7 +54,7 @@ function ThreadCard({ thread, onClick }: ThreadCardProps) {
   return (
     <button
       onClick={onClick}
-      className="w-full p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-left group"
+      className="w-full p-4 py-2 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-left group"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

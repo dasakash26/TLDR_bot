@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef } from "react";
 import {
   FolderGit2,
   MessageSquare,
@@ -55,9 +54,8 @@ export function FolderHeader({
         className="font-medium flex-1"
       >
         <ChevronRight
-          className={`mr-2 size-4 transition-transform duration-200 ${
-            isExpanded ? "rotate-90" : ""
-          }`}
+          className={`mr-2 size-4 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""
+            }`}
         />
         <FolderGit2
           className={
