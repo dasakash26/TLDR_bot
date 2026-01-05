@@ -38,8 +38,10 @@ function ThreadChatView({
   threadId: string | null;
 }) {
   const router = useRouter();
+  const [isMessaging, setIsMessaging] = useState(false);
   const { data: thread, isLoading: isThreadLoading } = useThread(
-    threadId || ""
+    threadId || "",
+    !isMessaging
   );
   const { sendMessage, isStreaming } = useChat(threadId || "");
   const { selectedFileId, isFileViewOpen, closeFileView } = useFileSelection();
@@ -56,17 +58,57 @@ function ThreadChatView({
   }, [thread, isThreadLoading, threadId, folderId, router]);
 
   const [input, setInput] = useState("");
-  const [localMessages, setLocalMessages] = useState<Message[]>(
-    thread?.messages || []
-  );
+  const [localMessages, setLocalMessages] = useState<Message[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const lastThreadIdRef = useRef<string | null>(null);
+  const serverMessageHashRef = useRef<string>("");
+  const optimisticIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    if (thread?.messages && !isStreaming) {
-      setLocalMessages(thread.messages);
+    if (!thread?.messages) return;
+
+    const sortedServerMessages = [...thread.messages].sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+
+    const messageHash = sortedServerMessages
+      .map((m) => m.id + m.content)
+      .join("|");
+
+    if (threadId !== lastThreadIdRef.current) {
+      setLocalMessages(sortedServerMessages);
+      lastThreadIdRef.current = threadId;
+      serverMessageHashRef.current = messageHash;
+      setIsMessaging(false);
+      optimisticIdsRef.current.clear();
+      return;
     }
-  }, [thread?.messages, isStreaming, threadId]);
+
+    if (isMessaging || isStreaming) return;
+
+    if (messageHash !== serverMessageHashRef.current) {
+      const optimisticIds = optimisticIdsRef.current;
+      const serverIds = new Set(sortedServerMessages.map((m) => m.id));
+
+      const finalMessages = sortedServerMessages.map((serverMsg) => {
+        const localMsg = localMessages.find((m) => m.id === serverMsg.id);
+        return localMsg && optimisticIds.has(localMsg.id)
+          ? localMsg
+          : serverMsg;
+      });
+
+      optimisticIds.forEach((id) => {
+        if (!serverIds.has(id)) {
+          optimisticIds.delete(id);
+        }
+      });
+
+      setLocalMessages(finalMessages);
+      serverMessageHashRef.current = messageHash;
+    }
+  }, [thread?.messages, threadId, isMessaging, isStreaming]);
 
   const scrollToBottom = (instant = false) => {
     if (scrollRef.current) {
@@ -98,17 +140,22 @@ function ThreadChatView({
   const handleSendMessage = async () => {
     if (!input.trim() || !threadId) return;
 
+    setIsMessaging(true);
+
+    const userMessageId = `temp-user-${Date.now()}`;
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: userMessageId,
       role: "USER",
       content: input,
       createdAt: new Date().toISOString(),
     };
 
+    optimisticIdsRef.current.add(userMessageId);
     setLocalMessages((prev) => [...prev, userMessage]);
     setInput("");
 
-    const aiMessageId = (Date.now() + 1).toString();
+    const aiMessageId = `temp-ai-${Date.now()}`;
+    optimisticIdsRef.current.add(aiMessageId);
     setLocalMessages((prev) => [
       ...prev,
       {
@@ -119,25 +166,29 @@ function ThreadChatView({
       },
     ]);
 
-    await sendMessage(
-      input,
-      (chunk) => {
-        setLocalMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === aiMessageId
-              ? { ...msg, content: msg.content + chunk } // Simple append, ideally handle full replacement or smarter merge
-              : msg
-          )
-        );
-      },
-      (citations) => {
-        setLocalMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === aiMessageId ? { ...msg, citations: citations } : msg
-          )
-        );
-      }
-    );
+    try {
+      await sendMessage(
+        input,
+        (chunk) => {
+          setLocalMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === aiMessageId
+                ? { ...msg, content: msg.content + chunk }
+                : msg
+            )
+          );
+        },
+        (citations) => {
+          setLocalMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === aiMessageId ? { ...msg, citations: citations } : msg
+            )
+          );
+        }
+      );
+    } finally {
+      setTimeout(() => setIsMessaging(false), 500);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

@@ -19,7 +19,9 @@ export function useChatMessaging(threadId: string) {
         await sendChatMessage(threadId, message, onChunk, onCitation);
       } finally {
         setIsStreaming(false);
-        queryClient.invalidateQueries({ queryKey: ["thread", threadId] });
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ["thread", threadId] });
+        }, 1000);
       }
     },
     [threadId, queryClient]

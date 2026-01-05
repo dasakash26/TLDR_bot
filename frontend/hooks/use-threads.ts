@@ -10,7 +10,7 @@ import {
 } from "@/types";
 import { createMutation } from "./use-mutation-factory";
 
-export function useThread(threadId: string) {
+export function useThread(threadId: string, enableRefetch: boolean = true) {
   return useQuery({
     queryKey: ["thread", threadId],
     queryFn: async () => {
@@ -36,6 +36,8 @@ export function useThread(threadId: string) {
       return data.thread as Thread;
     },
     enabled: !!threadId,
+    refetchInterval: enableRefetch ? 30000 : false,
+    refetchOnWindowFocus: enableRefetch,
   });
 }
 
