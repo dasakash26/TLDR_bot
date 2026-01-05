@@ -71,7 +71,7 @@ class VectorDB:
             )
             return []
 
-    async def query(self, query_text, filter_metadata=None, top_k=5):
+    async def query(self, query_text, filter_metadata=None, top_k=10):
         try:
             chroma_client = await self._ensure_client()
             results = await chroma_client.asimilarity_search(

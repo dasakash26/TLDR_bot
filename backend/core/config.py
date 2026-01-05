@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env")
 
     database_url: str
+    redis_url: str
     secret_key: str
     jwt_algo: str
     google_api_key: str

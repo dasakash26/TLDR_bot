@@ -51,13 +51,14 @@ async def process_doc(
             documents=all_splits,
             metadatas=[
                 {
+                    **chunk.metadata,  # Preserve existing metadata like 'page' from PDF loader
                     "document_id": document_id,
                     "folder_id": folder_id,
                     "filename": original_filename or Path(file_path_str).name,
                     "file_size": file_size,
                     "page_count": page_count or 0,
                 }
-                for _ in all_splits
+                for chunk in all_splits
             ],
         )
 

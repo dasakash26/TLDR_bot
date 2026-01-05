@@ -8,9 +8,12 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from slowapi import Limiter
 import json
+from core.config import settings
+from langgraph.checkpoint.redis.aio import AsyncRedisSaver
+
 
 from tools.auth import get_current_user
-from agent.executor import agent
+from agent.executor import agent_builder
 
 
 from .models import ChatReq, CreateThreadReq, UpdateThreadReq
@@ -81,7 +84,7 @@ async def get_threads(request: Request, folder_id: str, user=Depends(get_current
             },
         )
         logging.info(
-            f"Fetched threads for user {user_id} in folder {folder_id}: {folder}"
+            f"Fetched threads for user {user_id} in folder" 
         )
         if not folder:
             raise HTTPException(
@@ -264,74 +267,77 @@ async def chat_in_thread(
                         "chat_id": thread_id,
                     }
                 )
-
-                async for event in agent.astream_events(
-                    {"messages": [HumanMessage(content=message)]},
-                    version="v2",
-                    config=config,
-                ):
-                    kind = event["event"]
-                    
-                    if kind == "on_chat_model_stream":
-                        content = event["data"]["chunk"].content
-                        if content:
-                            full_response += content
-                            data = {
-                                "type": "message",
-                                "content": content,
-                            }
-                            yield f"data: {json.dumps(data)}\n\n"
-                    
-                    elif kind == "on_tool_end" and event["name"] == "retrieve":
-                        output = event["data"].get("output")
-                        docs = []
-                        if hasattr(output, "artifact"):
-                            docs = output.artifact
-                        elif isinstance(output, tuple) and len(output) == 2:
-                            docs = output[1]
+                async with AsyncRedisSaver.from_conn_string(settings.redis_url) as checkpointer:  
+                    agent = agent_builder.compile(
+                        checkpointer=checkpointer,
+                    )
+                    async for event in agent.astream_events(
+                        {"messages": [HumanMessage(content=message)]},
+                        version="v2",
+                        config=config,
+                    ):
+                        kind = event["event"]
                         
-                        if docs:
-                            citations = []
-                            for doc in docs:
-                                title = doc.metadata.get("filename") or doc.metadata.get("source", "Unknown Source")
-                                if "/" in title or "\\" in title:
-                                    import os
-                                    title = os.path.basename(title)
-                                    
-                                page = doc.metadata.get("page")
-                                if page is not None:
-                                    page = page + 1
-                                else:
-                                    page = doc.metadata.get("page_number", 1)
+                        if kind == "on_chat_model_stream":
+                            content = event["data"]["chunk"].content
+                            if content:
+                                full_response += content
+                                data = {
+                                    "type": "message",
+                                    "content": content,
+                                }
+                                yield f"data: {json.dumps(data)}\n\n"
+                        
+                        elif kind == "on_tool_end" and event["name"] == "retrieve":
+                            output = event["data"].get("output")
+                            docs = []
+                            if hasattr(output, "artifact"):
+                                docs = output.artifact
+                            elif isinstance(output, tuple) and len(output) == 2:
+                                docs = output[1]
+                            
+                            if docs:
+                                citations = []
+                                for doc in docs:
+                                    title = doc.metadata.get("filename") or doc.metadata.get("source", "Unknown Source")
+                                    if "/" in title or "\\" in title:
+                                        import os
+                                        title = os.path.basename(title)
+                                        
+                                    page = doc.metadata.get("page")
+                                    if page is not None:
+                                        page = page + 1
+                                    else:
+                                        page = doc.metadata.get("page_number", 1)
 
-                                citations.append({
-                                    "id": doc.metadata.get("document_id", "unknown"),
-                                    "title": title,
-                                    "page": page,
-                                    "total_pages": doc.metadata.get("page_count"),
-                                    "file_size": doc.metadata.get("file_size"),
-                                    "content": doc.page_content
-                                })
-                            collected_citations = citations
-                            yield f"data: {json.dumps({'type': 'citation', 'citations': citations})}\n\n"
+                                    citations.append({
+                                        "id": doc.metadata.get("document_id", "unknown"),
+                                        "title": title,
+                                        "page": page,
+                                        "total_pages": doc.metadata.get("page_count"),
+                                        "file_size": doc.metadata.get("file_size"),
+                                        "content": doc.page_content
+                                    })
+                                collected_citations = citations
+                                yield f"data: {json.dumps({'type': 'citation', 'citations': citations})}\n\n"
 
-                if full_response:
-                    msg_data = {
-                        "content": full_response,
-                        "role": ROLE.AI,
-                        "chat_id": thread_id,
-                    }
-                    if collected_citations:
-                        # Ensure citations are JSON serializable
-                        # Prisma Client Python handles list/dict to JSONB automatically, 
-                        # but sometimes explicit serialization helps if types are ambiguous
-                        from prisma import Json
-                        msg_data["citations"] = Json(collected_citations)
+                    if full_response:
+                        msg_data = {
+                            "content": full_response,
+                            "role": ROLE.AI,
+                            "chat_id": thread_id,
+                        }
+                        if collected_citations:
+                            # Ensure citations are JSON serializable
+                            # Prisma Client Python handles list/dict to JSONB automatically, 
+                            # but sometimes explicit serialization helps if types are ambiguous
+                            from prisma import Json
+                            msg_data["citations"] = Json(collected_citations)
 
-                    await db.message.create(data=msg_data)
-                    logging.info(f"Saved messages to database for thread {thread_id}")
+                        await db.message.create(data=msg_data)
+                        logging.info(f"Saved messages to database for thread {thread_id}")
 
-                yield f"data: {json.dumps({'type': 'done'})}\n\n"
+                    yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
             except Exception as e:
                 logging.error(f"Error in stream for thread {thread_id}: {e}")

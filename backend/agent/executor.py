@@ -6,11 +6,10 @@ from langgraph.graph.state import RunnableConfig
 from langgraph.prebuilt import ToolNode
 from services.vector_db import VectorDB
 from langchain.chat_models import init_chat_model
-from .prompts import get_rag_system_prompt
+from .prompts import get_rag_system_prompt, get_router_system_prompt, get_query_reformulation_prompt
 
 from langgraph.graph import END
 from langgraph.prebuilt import tools_condition
-from langgraph.checkpoint.memory import MemorySaver
 
 
 vector_store = VectorDB()
@@ -20,18 +19,23 @@ llm = init_chat_model("gemini-2.5-flash", model_provider="google_genai")
 
 @tool(response_format="content_and_artifact")
 async def retrieve(query: str, config: RunnableConfig):
-    """Retrieve information related to query."""
+    """Retrieve information related to query. Automatically reformulates vague queries for better semantic search."""
 
     folder_id = config.get("configurable", {}).get("folder_id")
     filter_metadata = {"folder_id": folder_id} if folder_id else None
     
-    retrieved_docs = await vector_store.query(query, filter_metadata, top_k=5)
+    reformulation_prompt = get_query_reformulation_prompt(query)
+    reformulated = await llm.ainvoke(reformulation_prompt)
+    search_query = reformulated.content.strip()
+    
+    retrieved_docs = await vector_store.query(search_query, filter_metadata, top_k=10)
     serialized_chunks = []
     for idx, doc in enumerate(retrieved_docs, start=1):
-        header = f"> Document {str(idx) + ' ' + doc.metadata.get('source', 'Unknown Source')}\n"
+        filename = doc.metadata.get('filename') or doc.metadata.get('source', 'Unknown Source')
+        header = f"> Document {idx} {filename}\n"
         serialized_chunks.append(header + doc.page_content + "\n")
 
-    logger.info(f"Retrieved {len(retrieved_docs)} documents for query: {query}")
+    logger.info(f"Retrieved {len(retrieved_docs)} documents for query: '{query}' (reformulated: '{search_query}')")
 
     serialized = "\n\n".join(serialized_chunks)
     return serialized, retrieved_docs
@@ -39,10 +43,9 @@ async def retrieve(query: str, config: RunnableConfig):
 
 def query_or_respond(state: MessagesState):
     """Generate tool-call for retrieve or respond directly."""
-    # We can optionally check if we have files in the context to guide the LLM
-    # But for now, let's just bind the tool.
+    messages_with_system = [get_router_system_prompt()] + state["messages"]
     llm_with_tools = llm.bind_tools([retrieve])
-    res = llm_with_tools.invoke(state["messages"])
+    res = llm_with_tools.invoke(messages_with_system)
     return {"messages": [res]}
 
 
@@ -51,7 +54,7 @@ tools = ToolNode([retrieve])
 
 async def generate(state: MessagesState):
     """Generate answer to the question."""
-    # Get generated ToolMessages
+    
     recent_tool_messages = []
     for message in reversed(state["messages"]):
         if message.type == "tool":
@@ -60,7 +63,6 @@ async def generate(state: MessagesState):
             break
     tool_messages = recent_tool_messages[::-1]
 
-    # Format into prompt
     docs_content = "\n\n".join(doc.content for doc in tool_messages)
     system_message_content = get_rag_system_prompt(docs_content)
 
@@ -73,8 +75,10 @@ async def generate(state: MessagesState):
 
     prompt: list[BaseMessage] = [system_message_content] + conversation_messages
 
-    # Run
+    logger.info(f"Generating response with {len(tool_messages)} tool messages and {len(conversation_messages)} conversation messages")
+    
     response = await llm.ainvoke(prompt)
+    logger.info(f"Generated response: {response.content[:100]}...")
     return {"messages": [response]}
 
 
@@ -92,6 +96,4 @@ agent_builder.add_conditional_edges(
 )
 agent_builder.add_edge("tools", "generate").add_edge("generate", END)
 
-memory = MemorySaver()
 
-agent = agent_builder.compile(checkpointer=memory)
