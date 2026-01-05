@@ -22,6 +22,7 @@ import { ThreadsSection } from "./threads-section";
 import { RenameDialog, DeleteAlert } from "./generic-dialogs";
 import { useFileSelection } from "@/hooks/use-file-selection";
 import { ShareDialog } from "@/components/share";
+import FileUploadDialog from "../file/file-upload-dialog";
 
 interface FolderItemProps {
   folder: Folder;
@@ -40,11 +41,9 @@ export function FolderItem({ folder, isExpanded, onToggle }: FolderItemProps) {
   const { mutate: updateFolder } = useUpdateFolder();
   const { mutate: deleteThread } = useDeleteThread();
   const { mutate: updateThread } = useUpdateThread();
-  const { mutate: uploadFile, isPending: isUploadingFile } = useUploadFile();
   const { mutate: deleteFile } = useDeleteFile();
   const { openFileView } = useFileSelection();
 
-  // Dialog States
   const [renameFolderOpen, setRenameFolderOpen] = useState(false);
   const [deleteFolderOpen, setDeleteFolderOpen] = useState(false);
   const [shareFolderOpen, setShareFolderOpen] = useState(false);
@@ -55,8 +54,9 @@ export function FolderItem({ folder, isExpanded, onToggle }: FolderItemProps) {
   const [threadToDelete, setThreadToDelete] = useState<Thread | null>(null);
   const [fileToDelete, setFileToDelete] = useState<FileType | null>(null);
 
+  const [fileUploadOpen, setFileUploadOpen] = useState(false);
+
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleCreateThread = (e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -64,7 +64,7 @@ export function FolderItem({ folder, isExpanded, onToggle }: FolderItemProps) {
       { folder_id: folder.id, thread_name: "New Chat" },
       {
         onSuccess: (data) => {
-          router.push(`/chat?threadId=${data.id}`);
+          router.push(`/chat?threadId=${data.id}&folderId=${folder.id}`);
         },
       }
     );
@@ -110,22 +110,12 @@ export function FolderItem({ folder, isExpanded, onToggle }: FolderItemProps) {
 
   const handleDeleteFile = () => {
     if (fileToDelete) {
-      deleteFile(fileToDelete.id);
+      deleteFile({
+        folderId: folder.id,
+        fileId: fileToDelete.id
+      });
     }
     setFileToDelete(null);
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    uploadFile({ folderId: folder.id, file });
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const triggerFileUpload = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    fileInputRef.current?.click();
   };
 
   const handleFileClick = (fileId: string) => {
@@ -145,15 +135,13 @@ export function FolderItem({ folder, isExpanded, onToggle }: FolderItemProps) {
           isExpanded={isExpanded}
           onToggle={onToggle}
           onCreateThread={handleCreateThread}
-          onUploadFile={triggerFileUpload}
+          setFileUploadOpen={() => setFileUploadOpen(true)}
           onRenameFolder={() => {
             setNewFolderName(folder.name);
             setRenameFolderOpen(true);
           }}
           onDeleteFolder={() => setDeleteFolderOpen(true)}
           onShareFolder={handleShareFolder}
-          fileInputRef={fileInputRef}
-          onFileChange={handleFileUpload}
         />
 
         <AnimatePresence>
@@ -169,13 +157,14 @@ export function FolderItem({ folder, isExpanded, onToggle }: FolderItemProps) {
                 <FilesSection
                   files={files}
                   isLoading={isLoadingFiles}
-                  isUploading={isUploadingFile}
-                  onUploadFile={triggerFileUpload}
+
+                  setFileUploadOpen={() => setFileUploadOpen(true)}
                   onFileClick={handleFileClick}
                   onDeleteFile={setFileToDelete}
                 />
 
                 <ThreadsSection
+                  folderId={folder.id}
                   threads={threads}
                   isLoading={isLoadingThreads}
                   isCreating={isCreatingThread}
@@ -190,6 +179,12 @@ export function FolderItem({ folder, isExpanded, onToggle }: FolderItemProps) {
       </SidebarMenuItem>
 
       {/* Dialogs */}
+      <FileUploadDialog
+        folderId={folder.id}
+        isOpen={fileUploadOpen}
+        onOpenChange={setFileUploadOpen}
+      />
+
       <RenameDialog
         open={renameFolderOpen}
         title="Rename Folder"

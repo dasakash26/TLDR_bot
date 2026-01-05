@@ -61,7 +61,7 @@ export function useCommandMenu({
 
   const handleOpenThread = useCallback(
     (folderId: string, threadId: string) => {
-      router.push(`/chat?threadId=${threadId}`);
+      router.push(`/chat?threadId=${threadId}&folderId=${folderId}`);
       setExpandedFolder(folderId);
       console.log("Opening thread:", threadId, "in folder:", folderId);
     },

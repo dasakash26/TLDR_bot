@@ -1,4 +1,4 @@
-export { ChatArea } from "./chat-area";
+export { ViewArea } from "./view-area";
 export { ChatHeader } from "./chat-header";
 export { ChatInput } from "./chat-input";
 export { ChatSidebar } from "./chat-sidebar";

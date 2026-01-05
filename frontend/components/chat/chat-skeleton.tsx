@@ -19,26 +19,28 @@ export function ChatSkeleton() {
       </header>
 
       {/* Messages Skeleton */}
-      <div className="flex-1 p-4 space-y-8 overflow-hidden">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="space-y-4">
-            {/* User Message Skeleton */}
-            <div className="flex justify-end gap-4 w-full">
-              <div className="flex flex-col items-end gap-2 max-w-[75%]">
-                <Skeleton className="h-12 w-64 rounded-[20px] rounded-tr-sm" />
+      <div className="flex-1 overflow-hidden">
+        <div className="max-w-3xl mx-auto px-4 py-8 space-y-8">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="space-y-4">
+              {/* User Message Skeleton */}
+              <div className="flex justify-end gap-4 w-full">
+                <div className="flex flex-col items-end gap-2 max-w-[75%]">
+                  <Skeleton className="h-12 w-64 rounded-[20px] rounded-tr-sm" />
+                </div>
+                <Skeleton className="h-8 w-8 rounded-full" />
               </div>
-              <Skeleton className="h-8 w-8 rounded-full" />
-            </div>
 
-            {/* AI Message Skeleton */}
-            <div className="flex justify-start gap-4 w-full">
-              <Skeleton className="h-8 w-8 rounded-full" />
-              <div className="flex flex-col items-start gap-2 max-w-[75%]">
-                <Skeleton className="h-24 w-96 rounded-[20px] rounded-tl-sm" />
+              {/* AI Message Skeleton */}
+              <div className="flex justify-start gap-4 w-full">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <div className="flex flex-col items-start gap-2 max-w-[75%]">
+                  <Skeleton className="h-24 w-96 rounded-[20px] rounded-tl-sm" />
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* Input Skeleton */}

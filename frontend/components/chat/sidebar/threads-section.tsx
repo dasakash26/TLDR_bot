@@ -27,6 +27,7 @@ import {
 import { Thread } from "@/types";
 
 interface ThreadsSectionProps {
+  folderId?: string;
   threads?: Thread[];
   isLoading: boolean;
   isCreating: boolean;
@@ -36,6 +37,7 @@ interface ThreadsSectionProps {
 }
 
 export function ThreadsSection({
+  folderId,
   threads,
   isLoading,
   isCreating,
@@ -55,9 +57,8 @@ export function ThreadsSection({
           className="flex items-center text-[10px] font-medium text-muted-foreground/60 uppercase tracking-wider hover:text-muted-foreground transition-colors"
         >
           <ChevronDown
-            className={`mr-1 size-3 transition-transform ${
-              isOpen ? "" : "-rotate-90"
-            }`}
+            className={`mr-1 size-3 transition-transform ${isOpen ? "" : "-rotate-90"
+              }`}
           />
           Chats ({threads?.length || 0})
         </button>
@@ -97,22 +98,20 @@ export function ThreadsSection({
                   <div className="flex items-center w-full group/thread">
                     <SidebarMenuSubButton
                       asChild
-                      className={`flex-1 h-8 text-xs transition-colors ${
-                        isActive
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                          : "text-sidebar-foreground/80 hover:text-sidebar-foreground"
-                      }`}
+                      className={`flex-1 h-8 text-xs transition-colors ${isActive
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                        : "text-sidebar-foreground/80 hover:text-sidebar-foreground"
+                        }`}
                     >
                       <Link
-                        href={`/chat?threadId=${thread.id}`}
+                        href={`/chat?threadId=${thread.id}&folderId=${folderId}`}
                         className="group flex items-center gap-2"
                       >
                         <MessageSquare
-                          className={`size-3.5 shrink-0 transition-colors ${
-                            isActive
-                              ? "text-primary opacity-100"
-                              : "opacity-70 group-hover:text-primary"
-                          }`}
+                          className={`size-3.5 shrink-0 transition-colors ${isActive
+                            ? "text-primary opacity-100"
+                            : "opacity-70 group-hover:text-primary"
+                            }`}
                         />
                         <span className="truncate">{thread.name}</span>
                       </Link>

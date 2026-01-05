@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Folder } from "lucide-react";
 import {
@@ -44,7 +44,7 @@ export function NewChatDialog({
   const { mutate: createThread, isPending: isCreatingThread } =
     useCreateThread();
 
-  const handleCreateChat = () => {
+  const handleCreateChat = useCallback(() => {
     if (chatFolderOption === "existing") {
       if (!selectedFolderId) return;
       createThread(
@@ -54,7 +54,7 @@ export function NewChatDialog({
             onOpenChange(false);
             setNewChatName("New Chat");
             setSelectedFolderId("");
-            router.push(`/chat?threadId=${data.id}`);
+            router.push(`/chat?threadId=${data.id}&folderId=${selectedFolderId}`);
             setExpandedFolder(selectedFolderId);
           },
         }
@@ -71,7 +71,7 @@ export function NewChatDialog({
                 setNewChatName("New Chat");
                 setNewChatFolderName("");
                 setChatFolderOption("existing");
-                router.push(`/chat?threadId=${threadData.id}`);
+                router.push(`/chat?threadId=${threadData.id}&folderId=${folderData.id}`);
                 setExpandedFolder(folderData.id);
               },
             }
@@ -79,7 +79,7 @@ export function NewChatDialog({
         },
       });
     }
-  };
+  }, [chatFolderOption, selectedFolderId, newChatFolderName, newChatName, createFolder, createThread, onOpenChange, router, setExpandedFolder]);
 
   //enter to submit
   useEffect(() => {

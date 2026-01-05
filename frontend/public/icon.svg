@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+  <!-- Rounded background -->
+  <rect width="512" height="512" rx="110" fill="#C4966F"/>
+  
+  <!-- Sparkles icon centered and scaled up -->
+  <g transform="translate(256, 256) scale(8)">
+    <!-- Main sparkle/star shape -->
+    <path d="M-0.983 -9.186a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" fill="white"/>
+    
+    <!-- Plus sign on top right -->
+    <path d="M8 -10v4" stroke="white" stroke-width="0.25" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M10 -8h-4" stroke="white" stroke-width="0.25" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Circle on bottom left -->
+    <circle cx="-8" cy="8" r="0.35" fill="white"/>
+  </g>
+</svg>

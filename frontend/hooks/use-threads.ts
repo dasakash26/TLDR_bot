@@ -15,9 +15,24 @@ export function useThread(threadId: string) {
     queryKey: ["thread", threadId],
     queryFn: async () => {
       if (!threadId) return null;
+      console.log("[useThread] Fetching thread:", threadId);
       const res = await fetchClient(`/thread/${threadId}`);
-      if (!res.ok) throw new Error("Failed to fetch thread");
+      if (!res.ok) {
+        console.error(
+          "[useThread] Failed to fetch thread:",
+          threadId,
+          "Status:",
+          res.status
+        );
+        throw new Error("Failed to fetch thread");
+      }
       const data = await res.json();
+      console.log(
+        "[useThread] Fetched thread:",
+        data.thread?.id,
+        "data:",
+        data.thread
+      );
       return data.thread as Thread;
     },
     enabled: !!threadId,
@@ -106,7 +121,7 @@ export const useUpdateThread = createMutation<
   },
 });
 
-export const useDeleteThread = createMutation({
+export const useDeleteThread = createMutation<any, string>({
   mutationFn: async (threadId: string) => {
     const res = await fetchClient(`/thread/${threadId}`, { method: "DELETE" });
     if (!res.ok) throw new Error("Failed to delete thread");
@@ -115,4 +130,12 @@ export const useDeleteThread = createMutation({
   invalidateKeys: [["folders"], ["recent-threads"]],
   successMessage: "Thread deleted successfully",
   errorMessage: "Failed to delete thread",
+  onSuccessCallback: (data, threadId, queryClient) => {
+    queryClient.removeQueries({
+      queryKey: ["thread", threadId],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["folders"],
+    });
+  },
 });

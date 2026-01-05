@@ -13,9 +13,24 @@ export function FolderLoadingState() {
           <Skeleton className="h-4 w-32" />
         </div>
       </header>
-      <div className="flex-1 p-8">
-        <Skeleton className="h-8 w-48 mb-8" />
-        <Skeleton className="h-32 w-full" />
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-xl mx-auto px-4 py-6 space-y-6">
+          <Skeleton className="h-8 w-48" />
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="rounded-xl border border-border/40 bg-muted/40 p-4 space-y-2"
+              >
+                <Skeleton className="h-5 w-48" />
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-3 w-28" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

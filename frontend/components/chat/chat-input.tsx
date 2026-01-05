@@ -1,11 +1,15 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import { ArrowUp, Paperclip } from "lucide-react";
 import { cn } from "@/lib/utils";
 import TextareaAutosize from "react-textarea-autosize";
+import FileUploadDialog from "./file/file-upload-dialog";
 
 interface ChatInputProps {
+  folderId: string | null;
+  threadId?: string;
   value: string;
   onChange: (value: string) => void;
   onSend: () => void;
@@ -15,6 +19,7 @@ interface ChatInputProps {
 }
 
 export function ChatInput({
+  folderId,
   value,
   onChange,
   onSend,
@@ -22,6 +27,8 @@ export function ChatInput({
   disabled = false,
   placeholder = "Ask anything...",
 }: ChatInputProps) {
+  const [fileUploadOpen, setFileUploadOpen] = useState(false);
+
   return (
     <div className="p-4 pb-6 bg-linear-to-t from-background via-background to-transparent">
       <div className="max-w-3xl mx-auto">
@@ -31,6 +38,9 @@ export function ChatInput({
               variant="ghost"
               size="icon"
               className="h-9 w-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/50 mb-0.5"
+              onClick={() => {
+                setFileUploadOpen(true);
+              }}
             >
               <Paperclip className="w-4 h-4" />
             </Button>
@@ -67,6 +77,13 @@ export function ChatInput({
           </p>
         </div>
       </div>
+      {folderId && (
+        <FileUploadDialog
+          folderId={folderId}
+          isOpen={fileUploadOpen}
+          onOpenChange={setFileUploadOpen}
+        />
+      )}
     </div>
   );
 }

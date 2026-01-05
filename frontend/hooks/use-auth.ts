@@ -42,7 +42,7 @@ export function useRegister(onSuccess?: () => void) {
       return res.json();
     },
     onSuccess: () => {
-      toast.success("OTP sent to your email");
+      toast.success("Verification code sent! Check your email inbox.");
       onSuccess?.();
     },
     onError: (error) => {
@@ -73,7 +73,7 @@ export function useVerifyOTP() {
       if (data.user) {
         setUser(data.user as User);
       }
-      toast.success("OTP verified successfully!");
+      toast.success("Email verified! Welcome to Recap.");
       router.push("/chat");
       router.refresh();
     },
@@ -98,10 +98,10 @@ export const useResendOTP = () => {
       return res.json();
     },
     onSuccess: () => {
-      toast.success("OTP resent successfully");
+      toast.success("New code sent! Check your email inbox.");
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to resend OTP");
+      toast.error(error.message || "Failed to resend code");
     },
   });
 };

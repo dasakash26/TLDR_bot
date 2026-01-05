@@ -202,8 +202,7 @@ const FolderSheet = ({ folderId }: { folderId: string }) => {
                                     <p className="text-sm truncate">
                                       {collab.name ||
                                         collab.email ||
-                                        `User ${
-                                          collab.id?.slice(0, 6) || "Unknown"
+                                        `User ${collab.id?.slice(0, 6) || "Unknown"
                                         }`}
                                     </p>
                                     {collab.id === user?.id && (
@@ -309,7 +308,7 @@ const FolderSheet = ({ folderId }: { folderId: string }) => {
                       folder.threads.map((thread: any, idx: number) => (
                         <motion.div
                           onClick={async () =>
-                            await router.push(`/chat?threadId=${thread.id}`)
+                            router.push(`/chat?threadId=${thread.id}&folderId=${folder.id}`)
                           }
                           key={thread.id}
                           initial={{ opacity: 0, x: -10 }}

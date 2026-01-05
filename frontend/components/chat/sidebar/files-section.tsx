@@ -7,6 +7,7 @@ import {
   FileText,
   MoreHorizontal,
   Trash2,
+  Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -26,8 +27,7 @@ import { File as FileType } from "@/types";
 interface FilesSectionProps {
   files?: FileType[];
   isLoading: boolean;
-  isUploading: boolean;
-  onUploadFile: () => void;
+  setFileUploadOpen: () => void;
   onFileClick: (fileId: string) => void;
   onDeleteFile: (file: FileType) => void;
 }
@@ -35,10 +35,9 @@ interface FilesSectionProps {
 export function FilesSection({
   files,
   isLoading,
-  isUploading,
-  onUploadFile,
   onFileClick,
   onDeleteFile,
+  setFileUploadOpen,
 }: FilesSectionProps) {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -60,14 +59,11 @@ export function FilesSection({
           variant="ghost"
           size="icon"
           className="h-4 w-4 opacity-0 group-hover/section:opacity-100 transition-opacity"
-          onClick={onUploadFile}
-          disabled={isUploading}
+          onClick={() => {
+            setFileUploadOpen();
+          }}
         >
-          {isUploading ? (
-            <Skeleton className="w-4 h-4 rounded-full" />
-          ) : (
-            <Plus className="size-4" />
-          )}
+          <Plus className="size-4" />
         </Button>
       </div>
 
@@ -97,7 +93,12 @@ export function FilesSection({
                       }}
                       className="group flex items-center gap-2 text-sidebar-foreground/80 hover:text-sidebar-foreground"
                     >
-                      <FileText className="size-3.5 opacity-70 group-hover:text-primary transition-colors shrink-0" />
+                      {file.status === "PROCESSING" ||
+                      file.status === "PENDING" ? (
+                        <Loader2 className="size-3.5 animate-spin text-primary shrink-0" />
+                      ) : (
+                        <FileText className="size-3.5 opacity-70 group-hover:text-primary transition-colors shrink-0" />
+                      )}
                       <span className="truncate">{file.filename}</span>
                     </a>
                   </SidebarMenuSubButton>

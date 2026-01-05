@@ -26,12 +26,11 @@ interface FolderHeaderProps {
   isExpanded: boolean;
   onToggle: () => void;
   onCreateThread: () => void;
-  onUploadFile: () => void;
   onRenameFolder: () => void;
   onDeleteFolder: () => void;
   onShareFolder?: () => void;
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
-  onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  setFileUploadOpen?: (
+  ) => void;
 }
 
 export function FolderHeader({
@@ -39,12 +38,10 @@ export function FolderHeader({
   isExpanded,
   onToggle,
   onCreateThread,
-  onUploadFile,
   onRenameFolder,
   onDeleteFolder,
   onShareFolder,
-  fileInputRef,
-  onFileChange,
+  setFileUploadOpen,
 }: FolderHeaderProps) {
   return (
     <div className="flex items-center w-full group/folder">
@@ -80,7 +77,7 @@ export function FolderHeader({
             <MessageSquare className="mr-2 h-4 w-4" />
             New Chat
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={onUploadFile}>
+          <DropdownMenuItem onClick={() => setFileUploadOpen && setFileUploadOpen(true)}>
             <Upload className="mr-2 h-4 w-4" />
             Upload File
           </DropdownMenuItem>
@@ -104,12 +101,6 @@ export function FolderHeader({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <input
-        type="file"
-        ref={fileInputRef}
-        className="hidden"
-        onChange={onFileChange}
-      />
     </div>
   );
 }

@@ -379,6 +379,7 @@ async def get_recent_threads(request: Request, user=Depends(get_current_user)):
                 {
                     "id": t.id,
                     "name": t.name,
+                    "folderId": t.folder_id,
                     "updatedAt": t.updatedAt,
                     "folderName": t.folder.name if t.folder else "Unknown"
                 }

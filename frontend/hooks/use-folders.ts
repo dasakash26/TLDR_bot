@@ -41,6 +41,14 @@ export function useFolderFiles(folderId: string) {
       return res.json() as Promise<File[]>;
     },
     enabled: !!folderId,
+    refetchInterval: (query) => {
+      // Poll every 3 seconds if any file is processing
+      const files = query.state.data || [];
+      const hasProcessingFiles = files.some(
+        (f) => f.status === "PROCESSING" || f.status === "PENDING"
+      );
+      return hasProcessingFiles ? 3000 : false;
+    },
   });
 }
 

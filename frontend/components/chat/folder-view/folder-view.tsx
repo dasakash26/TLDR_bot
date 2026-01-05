@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useFolderThreads, useFolder, useCreateThread } from "@/hooks/use-chat";
 import {
   FolderHeader,
@@ -13,13 +13,14 @@ import { toast } from "sonner";
 import { ChatInput } from "../chat-input";
 import { sendChatMessage } from "@/lib/chat-utils";
 import { useQueryClient } from "@tanstack/react-query";
+import { useFileSelection } from "@/hooks/use-file-selection";
+import { FileMetadataDialog } from "../file-metadata-dialog";
 
-export function FolderDetailView() {
-  const searchParams = useSearchParams();
-  const folderId = searchParams.get("folderId") || "";
+export function FolderDetailView({ folderId }: { folderId: string }) {
   const router = useRouter();
   const [input, setInput] = useState("");
   const queryClient = useQueryClient();
+  const { selectedFileId, isFileViewOpen, closeFileView } = useFileSelection();
 
   const { data: folder, isLoading: isFolderLoading } = useFolder(folderId);
   const { data: threads = [], isLoading: isLoadingThreads } =
@@ -34,8 +35,8 @@ export function FolderDetailView() {
     return <FolderLoadingState />;
   }
 
-  const handleThreadClick = (threadId: string) => {
-    router.push(`/chat?threadId=${threadId}`);
+  const handleThreadClick = (folderId: string, threadId: string) => {
+    router.push(`/chat?threadId=${threadId}&folderId=${folderId}`);
   };
 
   const handleSendMessage = async () => {
@@ -60,10 +61,12 @@ export function FolderDetailView() {
           console.error("Failed to send message:", error);
         }
 
-        router.push(`/chat?threadId=${response.id}`);
+        router.push(`/chat?threadId=${response.id}&folderId=${folderId}`);
       }
     } catch (error) {
-      toast.error("Failed to create thread");
+      toast.error("Failed to create thread", {
+        description: (error as Error).message,
+      });
       setInput(messageContent);
     }
   };
@@ -82,6 +85,7 @@ export function FolderDetailView() {
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-xl mx-auto px-4 py-6">
           <ThreadsSection
+            folderId={folderId}
             threads={threads}
             isLoading={isLoadingThreads}
             onThreadClick={handleThreadClick}
@@ -92,6 +96,7 @@ export function FolderDetailView() {
       <div className="border-t border-border/40">
         <div className="max-w-xl mx-auto">
           <ChatInput
+            folderId={folderId}
             value={input}
             onChange={setInput}
             onSend={handleSendMessage}
@@ -101,6 +106,13 @@ export function FolderDetailView() {
           />
         </div>
       </div>
+
+      {/* File Metadata Dialog */}
+      <FileMetadataDialog
+        fileId={selectedFileId}
+        open={isFileViewOpen}
+        onOpenChange={closeFileView}
+      />
     </div>
   );
 }

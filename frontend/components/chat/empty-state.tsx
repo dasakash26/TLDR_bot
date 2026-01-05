@@ -1,32 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Clock, Plus, Wand2, UploadCloud } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useRecentThreads, useFolders } from "@/hooks/use-chat";
-import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
-import { Sparkles as SparklesEffect } from "@/components/ui/sparkles";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { motion } from "framer-motion";
 import { NewChatDialog } from "@/components/new-chat-dialog";
-import { ActionPill } from "./empty-state/action-pill";
-import { RecentThreadCard } from "./empty-state/recent-thread-card";
 import { SuggestionCard } from "./empty-state/suggestion-card";
 import { EmptyStateLoadingSkeleton } from "./empty-state/loading-skeleton";
 import { fadeInUp, fadeInStagger } from "@/lib/animation-variants";
+import { WelcomeHeader } from "./empty-state/welcome-header";
+import { TutorialSection } from "./empty-state/tutorial-section";
+import { RecentThreadsList } from "./empty-state/recent-threads-list";
+import { FirstChatCard } from "./empty-state/first-chat-card";
+import { PromptChips } from "./empty-state/prompt-chips";
+import { NewFolderDialog } from "./sidebar/new-folder-dialog";
 
 type Thread = {
   id: string;
   name: string;
   folderName?: string;
+  folderId: string;
   updatedAt: string | number | Date;
 };
 
 const SUGGESTION_CHIPS = [
-  "Summarize my recent chats",
-  "Find key decisions made",
-  "What's in my latest uploads?",
-  "Search all conversations",
+  "Summarize this document",
+  "Find key insights",
+  "What are the main topics?",
+  "Extract important dates",
 ];
 
 export default function EmptyState() {
@@ -34,10 +36,13 @@ export default function EmptyState() {
     useRecentThreads();
   const { data: folders, isLoading: isLoadingFolders } = useFolders();
   const [isNewChatDialogOpen, setIsNewChatDialogOpen] = useState(false);
+  const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = useState(false);
 
   if (isLoadingThreads || isLoadingFolders) {
     return <EmptyStateLoadingSkeleton />;
   }
+
+  const hasNoThreads = !recentThreads || recentThreads.length === 0;
 
   return (
     <div className="flex flex-col h-full w-full bg-background">
@@ -52,144 +57,64 @@ export default function EmptyState() {
           animate="animate"
         >
           {/* Welcome Section */}
-          <motion.div
-            variants={fadeInUp}
-            className="relative flex flex-col gap-2 p-5 overflow-hidden rounded-2xl border border-border/40 bg-background/70"
-          >
-            <SparklesEffect
-              color="hsl(var(--primary))"
-              count={18}
-              minSize={2}
-              maxSize={4}
-              speed={0.3}
-              className="opacity-30"
-            />
-            <div className="relative z-10">
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-background/70 px-3 py-1 text-[11px] font-medium text-muted-foreground">
-                <Sparkles className="w-3.5 h-3.5" />
-                AI recap assistant
-              </div>
-              <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2 mt-2">
-                Welcome back
-                <motion.span
-                  animate={{ y: [0, -2, 0], rotate: [0, -1, 1, 0] }}
-                  transition={{
-                    duration: 7,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: 0.5,
-                  }}
-                  className="inline-flex"
-                >
-                  <Wand2 className="w-5 h-5 text-primary" />
-                </motion.span>
-              </h1>
-              <p className="text-[13px] text-muted-foreground leading-relaxed mt-1">
-                Ask questions about your files and chat history. Get instant
-                summaries and insights.
-              </p>
-              <div className="flex flex-wrap gap-2 mt-3">
-                <ActionPill
-                  icon={Plus}
-                  label="New chat"
-                  onClick={() => setIsNewChatDialogOpen(true)}
-                />
-                <ActionPill
-                  href="/chat?intent=upload"
-                  icon={UploadCloud}
-                  label="Upload files"
-                  variant="ghost"
-                />
-              </div>
-            </div>
-          </motion.div>
+          <WelcomeHeader
+            hasNoThreads={hasNoThreads}
+            onNewChat={() => setIsNewChatDialogOpen(true)}
+          />
+
+          {/* Tutorial Section - Only show when no threads */}
+          {hasNoThreads && <TutorialSection />}
 
           {/* Recent Threads & Suggestions */}
           <motion.div
             className="flex flex-col gap-3.5 items-stretch"
             variants={fadeInUp}
           >
-            {/* Recent Threads */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                  <Clock className="w-3.5 h-3.5" />
-                  Recent Chats
-                </div>
-                <span className="text-[11px] text-muted-foreground">
-                  {recentThreads?.length
-                    ? `${recentThreads.length} conversations`
-                    : "Nothing yet"}
-                </span>
-              </div>
-
-              {recentThreads && recentThreads.length > 0 ? (
-                <div className="flex flex-col gap-1.5">
-                  {(recentThreads as Thread[]).map((thread) => (
-                    <RecentThreadCard key={thread.id} thread={thread} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-sm text-muted-foreground italic">
-                  No recent chats yet.
-                </div>
-              )}
-            </div>
+            {/* Recent Threads - Only show if there are threads */}
+            {!hasNoThreads && <RecentThreadsList threads={recentThreads} />}
 
             {/* Suggestions */}
             <div className="space-y-2.5">
               <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                 <Sparkles className="w-3.5 h-3.5" />
-                Quick actions
+                {hasNoThreads ? "Get started" : "Quick actions"}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <SuggestionCard
-                  title="Chat with files"
-                  description="Upload documents and ask questions. Works with PDFs, docs, and more."
-                  cta="Start chatting"
-                  href="/chat"
-                />
-                <SuggestionCard
-                  title="Browse uploaded files"
-                  description="View and organize your documents in folders."
-                  cta="View files"
-                  href="/chat"
-                />
+                {hasNoThreads ? (
+                  <>
+                    <FirstChatCard
+                      onClick={() => setIsNewChatDialogOpen(true)}
+                    />
+                    <SuggestionCard
+                      title="Create a Folder"
+                      description="Organize your documents by creating your first folder."
+                      cta="Create folder"
+                      onClick={() => setIsNewFolderDialogOpen(true)}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <SuggestionCard
+                      title="New Chat"
+                      description="Start a new conversation in any folder."
+                      cta="Start chatting"
+                      onClick={() => setIsNewChatDialogOpen(true)}
+                    />
+                    <SuggestionCard
+                      title="Create Folder"
+                      description="Organize your documents in a new folder."
+                      cta="Create folder"
+                      onClick={() => setIsNewFolderDialogOpen(true)}
+                    />
+                  </>
+                )}
 
                 {/* Prompt Chips */}
-                <motion.div
-                  whileHover={{ y: -2 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  className="sm:col-span-2"
-                >
-                  <Card className="border-border/30 shadow-none">
-                    <CardContent className="p-3.5 space-y-2.5">
-                      <p className="text-sm font-semibold">Try these prompts</p>
-                      <div className="flex flex-wrap gap-2">
-                        {SUGGESTION_CHIPS.map((prompt, index) => (
-                          <motion.div
-                            key={prompt}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: index * 0.05 }}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            <Link
-                              href={`/chat?prefill=${encodeURIComponent(
-                                prompt
-                              )}`}
-                              className="inline-block px-3 py-1.5 rounded-full bg-muted/60 text-[12px] text-muted-foreground border border-border/40 hover:border-primary/40 hover:text-foreground hover:bg-muted transition-colors"
-                            >
-                              {prompt}
-                            </Link>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+                <PromptChips
+                  hasNoThreads={hasNoThreads}
+                  prompts={SUGGESTION_CHIPS}
+                />
               </div>
             </div>
           </motion.div>
@@ -200,6 +125,11 @@ export default function EmptyState() {
         open={isNewChatDialogOpen}
         onOpenChange={setIsNewChatDialogOpen}
         folders={folders}
+      />
+
+      <NewFolderDialog
+        open={isNewFolderDialogOpen}
+        onOpenChange={setIsNewFolderDialogOpen}
       />
     </div>
   );

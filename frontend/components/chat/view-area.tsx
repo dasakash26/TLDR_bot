@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useChat, useThread } from "@/hooks/use-chat";
 import { Message } from "@/types";
 import { useFileSelection } from "@/hooks/use-file-selection";
@@ -16,35 +16,59 @@ import {
   ScrollToBottomButton,
 } from "@/components/chat";
 
-export function ChatArea() {
+export function ViewArea() {
   const searchParams = useSearchParams();
   const threadId = searchParams.get("threadId");
   const folderId = searchParams.get("folderId");
 
-  if (folderId) {
-    return <FolderDetailView />;
+  console.log("[ViewArea] URL params:", { threadId, folderId });
+
+  if (!threadId && folderId) {
+    return <FolderDetailView folderId={folderId} />;
   }
 
-  return <ThreadChatView threadId={threadId} />;
+  return <ThreadChatView folderId={folderId} threadId={threadId} />;
 }
 
-function ThreadChatView({ threadId }: { threadId: string | null }) {
+function ThreadChatView({
+  folderId,
+  threadId,
+}: {
+  folderId: string | null;
+  threadId: string | null;
+}) {
+  const router = useRouter();
   const { data: thread, isLoading: isThreadLoading } = useThread(
     threadId || ""
   );
   const { sendMessage, isStreaming } = useChat(threadId || "");
   const { selectedFileId, isFileViewOpen, closeFileView } = useFileSelection();
 
+  // If thread doesn't exist after loading, redirect to folder or empty state
+  useEffect(() => {
+    if (!isThreadLoading && threadId && !thread) {
+      console.log("[ThreadChatView] Thread not found, redirecting...");
+      if (folderId) {
+        router.replace(`/chat?folderId=${folderId}`);
+      } else {
+        router.replace("/chat");
+      }
+    }
+  }, [thread, isThreadLoading, threadId, folderId, router]);
+
   const [input, setInput] = useState("");
-  const [localMessages, setLocalMessages] = useState<Message[]>([]);
+  const [localMessages, setLocalMessages] = useState<Message[]>(
+    thread?.messages || []
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
+  // Sync with thread messages when thread changes (but not during streaming)
   useEffect(() => {
-    if (thread?.messages) {
+    if (thread?.messages && !isStreaming) {
       setLocalMessages(thread.messages);
     }
-  }, [thread?.messages]);
+  }, [thread?.messages, isStreaming, threadId]);
 
   const scrollToBottom = () => {
     if (scrollRef.current) {
@@ -145,6 +169,7 @@ function ThreadChatView({ threadId }: { threadId: string | null }) {
       <ScrollToBottomButton show={showScrollButton} onClick={scrollToBottom} />
 
       <ChatInput
+        folderId={folderId || thread?.folderId || ""}
         value={input}
         onChange={setInput}
         onSend={handleSendMessage}

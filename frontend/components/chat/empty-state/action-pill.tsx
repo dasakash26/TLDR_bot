@@ -20,8 +20,8 @@ export function ActionPill({
 }: ActionPillProps) {
   const className =
     variant === "primary"
-      ? "inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-3.5 py-2 text-sm font-medium shadow-sm hover:shadow-sm transition-all"
-      : "inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/70 px-3.5 py-2 text-sm font-medium text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors";
+      ? "inline-flex items-center gap-1.5 rounded-full bg-chart-1 text-white px-3.5 py-2 text-sm font-medium shadow-sm hover:bg-chart-1/90 hover:shadow transition-all"
+      : "inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/70 px-3.5 py-2 text-sm font-medium text-muted-foreground hover:border-chart-1/40 hover:text-foreground transition-colors";
 
   const content = (
     <>
@@ -33,9 +33,9 @@ export function ActionPill({
   return (
     <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
       {onClick ? (
-        <Button onClick={onClick} className={`${className} h-auto`}>
+        <button onClick={onClick} className={className}>
           {content}
-        </Button>
+        </button>
       ) : (
         <Link href={href || "#"} className={className}>
           {content}

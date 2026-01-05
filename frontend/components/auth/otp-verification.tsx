@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { OTPInput } from "@/components/ui/otp-input";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Mail, Clock } from "lucide-react";
 
 interface OTPVerificationProps {
   email: string;
@@ -28,16 +28,32 @@ export function OTPVerification({
   return (
     <div>
       <div className="mb-8">
+        <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
+          <Mail className="w-8 h-8 text-primary" />
+        </div>
         <h2 className="text-3xl font-bold tracking-tight mb-2 text-foreground">
           {isLogin ? "Check your inbox" : "Verify your email"}
         </h2>
         <p className="text-muted-foreground">
-          We sent a 6-digit code to{" "}
+          We sent a 6-digit verification code to{" "}
           <span className="font-medium text-foreground">{email}</span>
         </p>
       </div>
 
       <div className="space-y-6">
+        {/* Info box */}
+        <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50 border border-border">
+          <Clock className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+          <div className="text-sm">
+            <p className="text-foreground font-medium mb-1">
+              Code sent via email
+            </p>
+            <p className="text-muted-foreground">
+              Check your inbox (and spam folder). The code expires in 24 hours.
+            </p>
+          </div>
+        </div>
+
         <OTPInput value={otp} onChange={onOtpChange} onComplete={onVerify} />
 
         <Button

@@ -17,6 +17,12 @@ export function useFileDetails(fileId: string | null) {
       return res.json() as Promise<FileRecord>;
     },
     enabled: !!fileId,
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      return data?.status === "PROCESSING" || data?.status === "PENDING"
+        ? 3000
+        : false;
+    },
   });
 }
 
@@ -53,8 +59,11 @@ export const useUploadFile = createMutation<
   },
 });
 
-export const useDeleteFile = createMutation({
-  mutationFn: async (fileId: string) => {
+export const useDeleteFile = createMutation<
+  any,
+  { folderId: string; fileId: string }
+>({
+  mutationFn: async ({ folderId, fileId }) => {
     const res = await fetchClient(`/file/${fileId}`, { method: "DELETE" });
     if (!res.ok) throw new Error("Failed to delete file");
     return res.json();
@@ -62,8 +71,10 @@ export const useDeleteFile = createMutation({
   invalidateKeys: [["folders"]],
   successMessage: "File deleted successfully",
   errorMessage: "Failed to delete file",
-  onSuccessCallback: (data, fileId, queryClient) => {
+  onSuccessCallback: (data, variables, queryClient) => {
     // Also remove the specific file query
-    queryClient.removeQueries({ queryKey: ["file", fileId] });
+    queryClient.invalidateQueries({
+      queryKey: ["folder", variables.folderId, "files"],
+    });
   },
 });

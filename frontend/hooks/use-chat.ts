@@ -20,13 +20,10 @@ export {
   useDeleteThread,
 } from "./use-threads";
 
-// File hooks
 export { useFileDetails, useUploadFile, useDeleteFile } from "./use-files";
 
-// Chat messaging hook
 export { useChatMessaging as useChat } from "./use-chat-messaging";
 
-// Re-export types for convenience
 export type {
   Folder,
   Thread,

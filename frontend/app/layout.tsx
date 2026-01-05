@@ -17,12 +17,12 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   icons: {
-    icon: "/main.jpg",
-    shortcut: "/main.jpg",
-    apple: "/main.jpg",
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
     other: {
       rel: "apple-touch-icon-precomposed",
-      url: "main.jpg",
+      url: "/icon.svg",
     },
   },
   title: "Recap - AI-Powered Document Assistant",

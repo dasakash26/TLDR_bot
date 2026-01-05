@@ -12,12 +12,14 @@ import { ThreadListSkeleton } from "./thread-list-skeleton";
 import { EmptyThreadsState } from "./empty-threads-state";
 
 interface ThreadsSectionProps {
+  folderId: string;
   threads: Thread[];
   isLoading: boolean;
-  onThreadClick: (threadId: string) => void;
+  onThreadClick: (folderId: string, threadId: string) => void;
 }
 
 export function ThreadsSection({
+  folderId,
   threads,
   isLoading,
   onThreadClick,
@@ -70,7 +72,7 @@ export function ThreadsSection({
               <ThreadCard
                 key={thread.id}
                 thread={thread}
-                onClick={() => onThreadClick(thread.id)}
+                onClick={() => onThreadClick(folderId, thread.id)}
                 onRename={() => handleRenameThreadOpen(thread)}
                 onDelete={() => setThreadToDelete(thread)}
               />

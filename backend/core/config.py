@@ -10,6 +10,11 @@ class Settings(BaseSettings):
     google_api_key: str
     langsmith_api_key: str
     langsmith_tracing: str = "true"
+    mail_host: str = "smtp.gmail.com"
+    mail_port: int = 587
+    mail_user: str
+    mail_password: str
+    mail_from_name: str = "Recap"
 
 
 settings = Settings()  # type: ignore

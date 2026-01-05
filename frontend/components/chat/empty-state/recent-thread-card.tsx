@@ -8,6 +8,7 @@ import { listItemSlideVariant } from "@/lib/animation-variants";
 interface Thread {
   id: string;
   name: string;
+  folderId: string;
   folderName?: string;
   updatedAt: string | number | Date;
 }
@@ -25,10 +26,10 @@ export function RecentThreadCard({ thread }: RecentThreadCardProps) {
     >
       <Link
         key={thread.id}
-        href={`/chat?threadId=${thread.id}`}
+        href={`/chat?threadId=${thread.id}&folderId=${thread.folderId}`}
         className="group"
       >
-        <Card className="hover:bg-muted/20 transition-colors border-border/30 shadow-none hover:border-border/50 rounded-xl">
+        <Card className="hover:bg-muted/40 transition-colors border-border/40 shadow-none hover:border-border/50 rounded-xl">
           <CardHeader className="px-3 py-2">
             <CardTitle className="text-[13px] font-medium flex items-start justify-between gap-2">
               <span className="truncate leading-tight">{thread.name}</span>

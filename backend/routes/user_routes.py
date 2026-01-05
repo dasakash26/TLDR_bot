@@ -5,6 +5,7 @@ from fastapi.responses import Response
 from core.config import settings
 from .models import LoginReq, SignupReq as registerReq, VerificationReq, ResendOtpReq
 from tools.otp_gen import gen_otp
+from tools.email_service import send_otp_email
 from services.db_service import db
 import logging
 from jose import jwt
@@ -74,7 +75,16 @@ async def register(request: Request, data: registerReq):
             )
 
     # send mail with otp
-    logging.info(f"OTP for {data.email} is {plain_otp}")
+    email_sent = send_otp_email(data.email, plain_otp, data.name)
+    
+    if not email_sent:
+        logging.error(f"Failed to send OTP email to {data.email}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to send verification email. Please try again later.",
+        )
+    
+    logging.info(f"OTP sent successfully to {data.email}")
     return {"message": "register successful. Please verify your email."}
 
 
@@ -183,7 +193,18 @@ async def resend_otp(request: Request, data: ResendOtpReq):
     hashed_otp = hash_secret(plain_otp)
 
     await db.user.update(where={"email": data.email}, data={"otp": hashed_otp})
-    logging.info(f"OTP for {data.email} is {plain_otp}")
+    
+    # Send OTP email
+    email_sent = send_otp_email(data.email, plain_otp, user.name)
+    
+    if not email_sent:
+        logging.error(f"Failed to send OTP email to {data.email}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to send verification email. Please try again later.",
+        )
+    
+    logging.info(f"OTP resent successfully to {data.email}")
     return {"message": "OTP resent successfully"}
 
 
