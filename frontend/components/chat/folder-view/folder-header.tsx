@@ -1,15 +1,16 @@
 "use client";
 
-import { FolderGit2, MoreHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { FolderGit2 } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ModeToggle } from "@/components/ui/mode-toggle";
+import FolderSheet from "./folder-sheeet";
 
 interface FolderHeaderProps {
+  folderId: string;
   folderName: string;
 }
 
-export function FolderHeader({ folderName }: FolderHeaderProps) {
+export function FolderHeader({ folderId, folderName }: FolderHeaderProps) {
   return (
     <header className="flex-none h-14 px-4 flex items-center justify-between border-b border-border/40 bg-background/80 backdrop-blur-md z-10">
       <div className="flex items-center gap-3">
@@ -28,13 +29,7 @@ export function FolderHeader({ folderName }: FolderHeaderProps) {
         </div>
       </div>
       <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <MoreHorizontal className="w-4 h-4" />
-        </Button>
+        <FolderSheet folderId={folderId} />
         <div className="w-px h-4 bg-border mx-1" />
         <ModeToggle />
       </div>

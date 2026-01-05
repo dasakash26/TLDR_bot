@@ -1,4 +1,4 @@
-export { FolderDetailView } from "./folder-detail-view";
+export { FolderDetailView } from "./folder-view";
 export { FolderHeader } from "./folder-header";
 export { FolderStats } from "./folder-stats";
 export { CollaboratorsSection } from "./collaborators-section";
