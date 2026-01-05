@@ -77,7 +77,7 @@ export function FolderHeader({
             <MessageSquare className="mr-2 h-4 w-4" />
             New Chat
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setFileUploadOpen && setFileUploadOpen(true)}>
+          <DropdownMenuItem onClick={() => setFileUploadOpen && setFileUploadOpen()}>
             <Upload className="mr-2 h-4 w-4" />
             Upload File
           </DropdownMenuItem>
