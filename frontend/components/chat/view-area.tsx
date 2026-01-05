@@ -44,7 +44,6 @@ function ThreadChatView({
   const { sendMessage, isStreaming } = useChat(threadId || "");
   const { selectedFileId, isFileViewOpen, closeFileView } = useFileSelection();
 
-  // If thread doesn't exist after loading, redirect to folder or empty state
   useEffect(() => {
     if (!isThreadLoading && threadId && !thread) {
       console.log("[ThreadChatView] Thread not found, redirecting...");
@@ -63,18 +62,17 @@ function ThreadChatView({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
-  // Sync with thread messages when thread changes (but not during streaming)
   useEffect(() => {
     if (thread?.messages && !isStreaming) {
       setLocalMessages(thread.messages);
     }
   }, [thread?.messages, isStreaming, threadId]);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = (instant = false) => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({
         top: scrollRef.current.scrollHeight,
-        behavior: "smooth",
+        behavior: instant ? "instant" : "smooth",
       });
     }
   };
@@ -82,6 +80,12 @@ function ThreadChatView({
   useEffect(() => {
     scrollToBottom();
   }, [localMessages, isStreaming]);
+
+  useEffect(() => {
+    if (thread?.messages && thread.messages.length > 0) {
+      scrollToBottom(true);
+    }
+  }, [thread?.id]);
 
   const handleScroll = () => {
     if (scrollRef.current) {

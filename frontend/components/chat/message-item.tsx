@@ -42,8 +42,10 @@ export function MessageItem({
 
       <div
         className={cn(
-          "flex flex-col gap-2 max-w-[85%] md:max-w-[75%]",
-          isUser && "items-end"
+          "flex flex-col gap-2",
+          isUser
+            ? "max-w-[85%] md:max-w-[70%] items-end"
+            : "max-w-[92%] md:max-w-[85%]"
         )}
       >
         <div
